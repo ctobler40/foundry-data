@@ -1,13 +1,14 @@
 import { useEffect, useState } from "react";
 import "./App.css";
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:6500";
+const API_URL =
+  process.env.REACT_APP_API_URL || "http://localhost:6500/";
 
 function App() {
   const [talents, setTalents] = useState([]);
 
   useEffect(() => {
-    fetch(`${API_URL}/api/talents`)
+    fetch(`${API_URL}api/talents`)
       .then((res) => res.json())
       .then((data) => setTalents(data))
       .catch((err) => console.error("Error fetching talents:", err));
@@ -22,7 +23,10 @@ function App() {
         {talents.length === 0 ? (
           <p>Loading talents...</p>
         ) : (
-          <table className="talent-table" style={{ width: "100%", borderCollapse: "collapse" }}>
+          <table
+            className="talent-table"
+            style={{ width: "100%", borderCollapse: "collapse" }}
+          >
             <thead>
               <tr>
                 <th>Name</th>
