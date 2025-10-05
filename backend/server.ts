@@ -113,7 +113,7 @@ app.delete("/api/talents/:id", async (req: Request, res: Response) => {
 // -----------------------------
 // Server start
 // -----------------------------
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 6500;
 httpServer.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
 });

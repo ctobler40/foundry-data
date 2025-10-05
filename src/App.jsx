@@ -5,7 +5,7 @@ function App() {
   const [talents, setTalents] = useState([]);
 
   useEffect(() => {
-    fetch("http://localhost:5000/api/talents")
+    fetch("http://localhost:6500/api/talents")
       .then((res) => res.json())
       .then((data) => setTalents(data))
       .catch((err) => console.error("Error fetching talents:", err));
