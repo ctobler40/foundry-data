@@ -1,0 +1,3 @@
+function returnQuery() {
+    return ;
+}
