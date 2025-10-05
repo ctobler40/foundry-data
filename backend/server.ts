@@ -5,15 +5,17 @@ import cors from "cors";
 import { Pool } from "pg";
 import dotenv from "dotenv";
 import { createServer } from "http";
-import { WebSocketServer } from "ws"; // ✅ Raw WebSocket
-import { Server as SocketIOServer } from "socket.io"; // (optional)
+import { Server as SocketIOServer } from "socket.io"; // optional future use
 
+// ----------------------------------------
+// 🧩 Environment Setup
+// ----------------------------------------
 dotenv.config();
 
 const app = express();
 const httpServer = createServer(app);
 
-// Optional: Socket.IO (can be used later if needed)
+// Optional: Keep Socket.IO ready (not required, can remove later)
 const io = new SocketIOServer(httpServer, {
   cors: {
     origin: [
@@ -21,23 +23,6 @@ const io = new SocketIOServer(httpServer, {
       "https://foundry-data.onrender.com",
     ],
   },
-});
-
-// ----------------------------------------
-// 🧠 WebSocket Setup
-// ----------------------------------------
-const wss = new WebSocketServer({ server: httpServer, path: "/ws" });
-
-wss.on("connection", (ws) => {
-  console.log("✅ WebSocket connected");
-  ws.send("Hello client!");
-
-  ws.on("message", (message) => {
-    console.log("📩 Received:", message.toString());
-    ws.send(`Server echo: ${message}`);
-  });
-
-  ws.on("close", () => console.log("❌ WebSocket disconnected"));
 });
 
 // ----------------------------------------
