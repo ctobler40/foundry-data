@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 function Home() {
   return (
     <div className="home-container">
+      {/* Hero Section */}
       <section className="hero-section">
         <h1 className="hero-title">Wrath & Glory Database</h1>
         <p className="hero-subtitle">
@@ -10,9 +11,13 @@ function Home() {
         </p>
       </section>
 
+      {/* Archives Overview */}
       <section className="info-section">
         <h2>Discover the Archives</h2>
-        <p>The Wrath & Glory Database is a digital archive dedicated to the campaigns, talents, and stories forged within the grim darkness of the 41st millennium.</p>
+        <p>
+          The Wrath & Glory Database is a digital archive dedicated to the campaigns,
+          talents, and stories forged within the grim darkness of the 41st millennium.
+        </p>
 
         <div className="feature-grid">
           <div className="feature-card">
@@ -37,29 +42,64 @@ function Home() {
         </div>
       </section>
 
+      {/* FAFO Party */}
       <section className="info-section">
         <h2>FAFO</h2>
-        <p>Here, we follow the group of FAFO. A small group of people (and kroot) who constantly find a way to get themselves in a heap of shit.</p>
+        <p>
+          Here we follow the group of FAFO — a small band of people (and one persistent Kroot)
+          who constantly find themselves knee-deep in trouble.
+        </p>
 
         <h3>Current Members</h3>
-          <div className="feature-grid">
-            <div className="feature-card">
-              <h3>Hrellik Orchik</h3>
-              <p>
-                A lone Kroot mercenary who awoke in the undercity of Nikonova with no
-                memory of how he arrived. Driven by instinct and fragmented recollections
-                of past hunts, Hrellik walks the line between survival and savagery.
-              </p>
-              <img
-                src="/images/kroot.png"
-                alt="Hrellik"
-                className="character-image"
-              />
-              <Link to="/talents" className="link-blue">
-                Explore →
-              </Link>
-            </div>
+        <div className="feature-grid">
+          <div className="feature-card">
+            <img src="/images/kroot.png" alt="Hrellik" className="character-image" />
+            <h3>Hrellik Orchik</h3>
+            <p>
+              A Kroot mercenary torn between primal instinct and flashes of Tau logic,
+              wandering Nikonova in search of purpose.
+            </p>
           </div>
+
+          <div className="feature-card">
+            <img src="/images/kaleson.png" alt="Kaleson" className="character-image" />
+            <h3>Kaleson Van Der Hildr</h3>
+            <p>
+              A loudmouthed scribe from the Wieder Imperium whose charm and ego
+              often land the party in chaos.
+            </p>
+          </div>
+
+          <div className="feature-card">
+            <img src="/images/agnes.png" alt="Agnes" className="character-image" />
+            <h3>Agnes Grimm</h3>
+            <p>
+              A stealthy rebel teaching Je’lichi techniques, quick with her wit and slower to trust.
+            </p>
+          </div>
+
+          <div className="feature-card">
+            <img src="/images/dahlia.png" alt="Dahlia" className="character-image" />
+            <h3>Dahlia Garakis</h3>
+            <p>
+              A hard-drinking fighter from the Renegade House whose humor masks deep scars.
+            </p>
+          </div>
+
+          <div className="feature-card">
+            <img src="/images/joe.png" alt="Joe Graves" className="character-image" />
+            <h3>Sgt. Joe Graves</h3>
+            <p>
+              A Sordin PDF trooper driven by duty and guilt, last seen missing in the chaos of Nikonova.
+            </p>
+          </div>
+        </div>
+
+        <div style={{ textAlign: "center", marginTop: "2rem" }}>
+          <Link to="/characters" className="modern-btn">
+            View All Characters
+          </Link>
+        </div>
       </section>
 
       <footer className="home-footer">

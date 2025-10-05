@@ -202,6 +202,41 @@ body,
   font-size: 1.3rem;
 }
 
+.modern-btn {
+  background: linear-gradient(90deg, #1e90ff, #0055cc);
+  color: white;
+  padding: 0.8rem 1.6rem;
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: 600;
+  transition: background 0.3s ease;
+}
+
+.modern-btn:hover {
+  background: linear-gradient(90deg, #2ba0ff, #0077ff);
+}
+
+.characters-container {
+  padding: 2rem;
+  color: #f2f2f2;
+  background-color: #1c1c1c;
+}
+
+.icon-wrapper {
+  text-align: center;
+  margin-bottom: 10px;
+}
+
+.status-line {
+  margin-top: 0.5rem;
+  font-weight: 500;
+}
+
+.cause-line {
+  font-size: 0.9rem;
+  color: #c05a5a;
+}
+
 .feature-card p {
   color: #ccc;
   font-size: 0.95rem;
@@ -322,4 +357,87 @@ body,
 .talents-loading {
   text-align: center;
   margin-top: 5rem;
+}
+
+/* ---------- CHARACTER PAGE LAYOUT ---------- */
+.character-section {
+  text-align: center;
+  margin: 0 auto;
+  max-width: 1600px;
+}
+
+/* Responsive grid with proper spacing and wrapping */
+.character-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 2rem; /* increased to prevent vertical overlap */
+  justify-items: center;
+  align-items: stretch; /* ensures even vertical space allocation */
+  margin-top: 2rem;
+  padding: 0 1rem;
+}
+
+/* Individual character card styling */
+.character-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  background-color: #1a1a1a;
+  border-radius: 10px;
+  padding: 1.5rem;
+  border: 1px solid #222;
+  box-shadow: 0 0 10px rgba(58, 123, 213, 0.1);
+  transition: all 0.3s ease;
+  width: 100%;
+  min-width: 240px;
+  max-width: 280px;
+  height: auto; /* allow full expansion based on content */
+  position: relative;
+  overflow: hidden; /* ensure content stays contained */
+}
+
+.character-card:hover {
+  transform: translateY(-6px);
+  border-color: #3a7bd5;
+  box-shadow: 0 0 18px rgba(0, 210, 255, 0.3);
+}
+
+.character-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+/* Keeps the button pinned visually at the bottom */
+.character-update-btn {
+  margin-top: auto;
+  width: 100%;
+  font-size: 0.95rem;
+  padding: 0.7rem;
+  border-radius: 8px;
+}
+
+/* Image alignment and sizing */
+.character-image {
+  width: 100%;
+  max-width: 160px;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  box-shadow: 0 0 12px rgba(0, 210, 255, 0.2);
+  object-fit: cover;
+}
+
+
+.status-line {
+  margin-top: 0.6rem;
+  font-weight: 500;
+  color: #9fd3ff;
+}
+
+.cause-line {
+  font-size: 0.9rem;
+  color: #c05a5a;
+  margin-top: 0.4rem;
 }

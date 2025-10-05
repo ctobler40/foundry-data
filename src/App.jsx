@@ -1,17 +1,25 @@
 import { useState, useEffect } from "react";
-import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+} from "react-router-dom";
 import "./App.css";
 
 import Home from "./pages/Home";
 import Talents from "./pages/Talents";
 import Talent from "./components/Talent";
+import Characters from "./pages/Characters";
 import Navbar from "./components/Navbar";
 
 const API_URL = process.env.REACT_APP_API_URL || "http://localhost:6500/";
 
 function App() {
   const [talents, setTalents] = useState([]);
+  const [characters, setCharacters] = useState([]);
 
+  // Fetch talents
   useEffect(() => {
     fetch(`${API_URL}api/talents`)
       .then((res) => res.json())
@@ -25,6 +33,20 @@ function App() {
       });
   }, []);
 
+  // Fetch characters
+  useEffect(() => {
+    fetch(`${API_URL}api/characters`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (Array.isArray(data)) setCharacters(data);
+        else setCharacters([]);
+      })
+      .catch((err) => {
+        console.error("Error fetching characters:", err);
+        setCharacters([]);
+      });
+  }, []);
+
   return (
     <Router>
       <div className="app-wrapper">
@@ -35,6 +57,10 @@ function App() {
             <Route path="/" element={<Home />} />
             <Route path="/talents" element={<Talents talents={talents} />} />
             <Route path="/talent/:id" element={<Talent talents={talents} />} />
+            <Route
+              path="/characters"
+              element={<Characters characters={characters} />}
+            />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </main>
