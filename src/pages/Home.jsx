@@ -6,19 +6,12 @@ function Home() {
       <section className="hero-section">
         <h1 className="hero-title">Wrath & Glory Database</h1>
         <p className="hero-subtitle">
-          Explore the Talents, Abilities, and Records of the Imperium’s greatest heroes.
+          Thank you Cam for all the work on this Campaign!
         </p>
-        <Link to="/talents" className="modern-btn hero-btn">
-          View All Talents
-        </Link>
       </section>
 
       <section className="info-section">
         <h2>Discover the Archives</h2>
-        <p>
-          This database compiles knowledge from the <strong>Wrath & Glory</strong> system —
-          tracking character talents, species traits, and other unique features across campaigns.
-        </p>
 
         <div className="feature-grid">
           <div className="feature-card">
