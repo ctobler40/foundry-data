@@ -282,6 +282,62 @@ app.post("/api/campaign", async (req: Request, res: Response) => {
   }
 });
 
+app.get("/api/regroupActions", async (req: Request, res: Response) => {
+  try {
+    const { rows } = await db.query(`
+      SELECT ra.*, 
+             COALESCE(
+               json_agg(
+                 json_build_object(
+                   'id', rao.id,
+                   'title', rao.title,
+                   'effect', rao.effect,
+                   'example_usage', rao.example_usage
+                 )
+               ) FILTER (WHERE rao.id IS NOT NULL), '[]'
+             ) AS options
+      FROM regroup_actions ra
+      LEFT JOIN regroup_action_options rao ON ra.id = rao.regroup_action_id
+      GROUP BY ra.id
+      ORDER BY ra.id ASC;
+    `);
+    res.json(rows);
+  } catch (err) {
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+app.post("/api/regroupActions", async (req: Request, res: Response) => {
+  try {
+    const { name, description, notes } = req.body;
+    const { rows } = await db.query(
+      `INSERT INTO regroup_actions (name, description, notes)
+       VALUES ($1, $2, $3)
+       RETURNING *`,
+      [name, description, notes]
+    );
+    res.status(201).json(rows[0]);
+  } catch (err) {
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+app.post("/api/regroupActions/:id/options", async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { title, effect, example_usage } = req.body;
+    const { rows } = await db.query(
+      `INSERT INTO regroup_action_options (regroup_action_id, title, effect, example_usage)
+       VALUES ($1, $2, $3, $4)
+       RETURNING *`,
+      [id, title, effect, example_usage]
+    );
+    res.status(201).json(rows[0]);
+  } catch (err) {
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
 // ============================================================================
 // SUPPORT TABLE ROUTES (characterImportance, characterStatus)
 // ============================================================================

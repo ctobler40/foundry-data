@@ -68,3 +68,19 @@ CREATE TABLE campaign_groups (
     name TEXT NOT NULL,
     description TEXT
 );
+
+CREATE TABLE regroup_actions (
+    id SERIAL PRIMARY KEY,
+    name TEXT NOT NULL,
+    description TEXT,
+    notes TEXT,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE regroup_action_options (
+    id SERIAL PRIMARY KEY,
+    regroup_action_id INTEGER REFERENCES regroup_actions(id) ON DELETE CASCADE,
+    title TEXT NOT NULL,
+    effect TEXT,
+    example_usage TEXT
+);

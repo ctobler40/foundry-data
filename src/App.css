@@ -154,7 +154,6 @@ body,
 }
 
 .info-section {
-  max-width: 1000px;
   text-align: center;
   padding: 3rem 2rem;
 }
@@ -184,7 +183,7 @@ body,
   background-color: #1a1a1a;
   border-radius: 10px;
   padding: 1.5rem;
-  text-align: left;
+  text-align: center;
   transition: all 0.3s ease;
   border: 1px solid #222;
   box-shadow: 0 0 10px rgba(58, 123, 213, 0.1);
@@ -369,12 +368,13 @@ body,
 /* Responsive grid with proper spacing and wrapping */
 .character-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 2rem; /* increased to prevent vertical overlap */
-  justify-items: center;
-  align-items: stretch; /* ensures even vertical space allocation */
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 2rem;
+  justify-content: center; /* center the entire grid content */
+  align-items: start;
   margin-top: 2rem;
   padding: 0 1rem;
+  width: 100%;
 }
 
 /* Individual character card styling */
@@ -440,4 +440,44 @@ body,
   font-size: 0.9rem;
   color: #c05a5a;
   margin-top: 0.4rem;
+}
+
+.page-container {
+  padding: 20px;
+  background-color: #1e1e1e;
+  color: white;
+}
+
+.page-title {
+  text-align: center;
+  margin-bottom: 20px;
+  font-size: 2rem;
+}
+
+.regroup-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 20px;
+}
+
+.regroup-card {
+  background: #2d2d2d;
+  border-radius: 10px;
+  padding: 16px;
+  box-shadow: 0 0 10px rgba(0,0,0,0.3);
+}
+
+.regroup-card h3 {
+  color: #5bc0de;
+  margin-bottom: 8px;
+}
+
+.options-section h4 {
+  margin-top: 10px;
+  color: #f0ad4e;
+}
+
+ul {
+  list-style-type: disc;
+  margin-left: 20px;
 }

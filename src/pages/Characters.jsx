@@ -13,8 +13,8 @@ function Characters() {
   const [newImageUrl, setNewImageUrl] = useState("");
   const [importanceOptions, setImportanceOptions] = useState([]);
   const [statusOptions, setStatusOptions] = useState([]);
+  const [searchQuery, setSearchQuery] = useState("");
 
-  // Editable form data
   const [editData, setEditData] = useState({
     name: "",
     description: "",
@@ -48,7 +48,6 @@ function Characters() {
     fetchAllData();
   }, []);
 
-  // --- IMAGE UPLOADER ---
   const handleOpenUploader = (char) => {
     setSelectedChar(char);
     setNewImageUrl(char.iconhtml || "");
@@ -77,15 +76,12 @@ function Characters() {
           )
         );
         handleCloseUploader();
-      } else {
-        console.error("Failed to update image");
       }
     } catch (err) {
       console.error("Error updating character image:", err);
     }
   };
 
-  // --- CHARACTER EDITOR ---
   const handleOpenEditor = (char) => {
     setSelectedChar(char);
     setEditData({
@@ -125,8 +121,6 @@ function Characters() {
           prev.map((c) => (c.id === updated.id ? updated : c))
         );
         handleCloseEditor();
-      } else {
-        console.error("Failed to update character info");
       }
     } catch (err) {
       console.error("Error updating character info:", err);
@@ -135,7 +129,15 @@ function Characters() {
 
   if (loading) return <p>Loading characters...</p>;
 
-  const grouped = characters.reduce((acc, char) => {
+  const filteredCharacters = characters.filter((char) =>
+    [char.name, char.description]
+      .filter(Boolean)
+      .some((field) =>
+        field.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+  );
+
+  const grouped = filteredCharacters.reduce((acc, char) => {
     const key = char.importance_label || "Uncategorized";
     if (!acc[key]) acc[key] = [];
     acc[key].push(char);
@@ -143,17 +145,41 @@ function Characters() {
   }, {});
 
   return (
-    <div className="characters-container">
+    <div className="characters-container" style={{ textAlign: "center" }}>
       <section className="hero-section">
         <h1 className="hero-title">Character Archive</h1>
         <p className="hero-subtitle">
-          Records of those who fought, survived, or vanished in the Nikonova campaign.
+          Records of those who fought, survived, or vanished in the Chalnath Expanse campaign.
         </p>
+
+        <div style={{ marginTop: "1.5rem" }}>
+          <input
+            type="text"
+            className="modern-input"
+            placeholder="Search characters..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            style={{
+              width: "60%",
+              maxWidth: "480px",
+              padding: "0.6rem 1rem",
+              borderRadius: "8px",
+              border: "1px solid #4da6ff",
+              backgroundColor: "#1a1a1a",
+              color: "#fff",
+              fontSize: "1rem",
+              outline: "none",
+              transition: "border 0.2s ease-in-out",
+            }}
+            onFocus={(e) => (e.target.style.border = "1px solid #80bfff")}
+            onBlur={(e) => (e.target.style.border = "1px solid #4da6ff")}
+          />
+        </div>
       </section>
 
       {Object.entries(grouped).map(([group, members]) => (
         <section key={group} className="info-section character-section">
-          <h2>{group}</h2>
+          <h2 style={{ color: "#4da6ff" }}>{group}</h2>
           <div className="character-grid">
             {members.map((char) => (
               <CharacterCard

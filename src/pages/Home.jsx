@@ -12,71 +12,12 @@ function Home() {
       </section>
 
       <section className="info-section">
+        <h2>Campaigns</h2>
         <div className="feature-card">
-          <h3>Campaign</h3>
-          <p>Learn about the Kalidonia campaign and its factions.</p>
+          <h3>Chalnath Expanse</h3>
+          <p>A story about 3 humans and a kroot that fucked around and found out.</p>
           <Link to="/campaign" className="link-blue">
             View Campaign →
-          </Link>
-        </div>
-      </section>
-
-      {/* FAFO Party */}
-      <section className="info-section">
-        <h2>FAFO</h2>
-        <p>
-          Here we follow the group of FAFO — a small band of people (and one persistent Kroot)
-          who constantly find themselves knee-deep in trouble.
-        </p>
-
-        <h3>Current Members</h3>
-        <div className="feature-grid">
-          <div className="feature-card">
-            <img src="/images/kroot.png" alt="Hrellik" className="character-image" />
-            <h3>Hrellik Orchik</h3>
-            <p>
-              A Kroot mercenary torn between primal instinct and flashes of Tau logic,
-              wandering Nikonova in search of purpose.
-            </p>
-          </div>
-
-          <div className="feature-card">
-            <img src="/images/kaleson.png" alt="Kaleson" className="character-image" />
-            <h3>Kaleson Van Der Hildr</h3>
-            <p>
-              A loudmouthed scribe from the Wieder Imperium whose charm and ego
-              often land the party in chaos.
-            </p>
-          </div>
-
-          <div className="feature-card">
-            <img src="/images/agnes.png" alt="Agnes" className="character-image" />
-            <h3>Agnes Grimm</h3>
-            <p>
-              A stealthy rebel teaching Je’lichi techniques, quick with her wit and slower to trust.
-            </p>
-          </div>
-
-          <div className="feature-card">
-            <img src="/images/dahlia.png" alt="Dahlia" className="character-image" />
-            <h3>Dahlia Garakis</h3>
-            <p>
-              A hard-drinking fighter from the Renegade House whose humor masks deep scars.
-            </p>
-          </div>
-
-          <div className="feature-card">
-            <img src="/images/joe.png" alt="Joe Graves" className="character-image" />
-            <h3>Sgt. Joe Graves</h3>
-            <p>
-              A Sordin PDF trooper driven by duty and guilt, last seen missing in the chaos of Nikonova.
-            </p>
-          </div>
-        </div>
-
-        <div style={{ textAlign: "center", marginTop: "2rem" }}>
-          <Link to="/characters" className="modern-btn">
-            View All Characters
           </Link>
         </div>
       </section>
