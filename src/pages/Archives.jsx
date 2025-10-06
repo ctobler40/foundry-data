@@ -1,27 +1,8 @@
 import { Link } from "react-router-dom";
-import Archives from "./Archives";
 
-function Home() {
+function Archives() {
   return (
     <div className="home-container">
-      <section className="hero-section">
-        <h1 className="hero-title">Wrath & Glory Database</h1>
-        <p className="hero-subtitle">
-          Thank you Cam for all the work on this Campaign!
-        </p>
-      </section>
-
-      <section className="info-section">
-        <h2>Campaigns</h2>
-        <div className="feature-card">
-          <h3>Chalnath Expanse</h3>
-          <p>A story about 3 humans and a kroot that fucked around and found out.</p>
-          <Link to="/campaign" className="link-blue">
-            View Campaign →
-          </Link>
-        </div>
-      </section>
-
       <section className="info-section">
         <h2>Discover the Archives</h2>
         <p>
@@ -51,16 +32,16 @@ function Home() {
             <p>(Coming soon) Discover Psyker powers, Faith abilities, and faction-specific boons.</p>
             <span className="coming-soon">Coming Soon</span>
           </div>
-        </div>
 
-        <div className="archives-link-container">
-          <Link to="/archives" className="modern-btn archives-btn">
-            View the Full Archives →
-          </Link>
+          <div className="feature-card">
+            <h3>Lore Index</h3>
+            <p>(Coming soon) Dive into the lore and data entries gathered from your campaigns.</p>
+            <span className="coming-soon">Coming Soon</span>
+          </div>
         </div>
       </section>
     </div>
   );
 }
 
-export default Home;
+export default Archives;

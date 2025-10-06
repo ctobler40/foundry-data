@@ -14,6 +14,9 @@ import Characters from "./pages/Characters";
 import Campaign from "./pages/Campaign";
 import Navbar from "./components/Navbar";
 import RegroupActions from "./pages/RegroupActions";
+import Archives from "./pages/Archives";
+import Footer from "./components/Footer";
+import Search from "./components/Search";
 
 const API_URL = process.env.REACT_APP_API_URL || "http://localhost:6500/";
 
@@ -90,12 +93,12 @@ function App() {
               }
             />
             <Route path="/regroup-actions" element={<RegroupActions />} />
+            <Route path="/archives" element={<Archives />} />
+            <Route path="/search" element={<Search />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </main>
-        <footer className="App-footer">
-          <p>© {new Date().getFullYear()} Wrath & Glory Foundry Data</p>
-        </footer>
+        <Footer />
       </div>
     </Router>
   );

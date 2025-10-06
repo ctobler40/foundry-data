@@ -314,12 +314,6 @@ function Characters() {
           </div>
         </div>
       )}
-
-      <footer className="home-footer">
-        <Link to="/" className="link-blue">
-          ← Back to Home
-        </Link>
-      </footer>
     </div>
   );
 }

@@ -1,13 +1,12 @@
 import { useState, useMemo } from "react";
 import Talent from "../components/Talent";
 
-function Talents({ talents }) {
+export default function Talents({ talents }) {
   const [selectedTalent, setSelectedTalent] = useState(null);
   const [search, setSearch] = useState("");
   const [sortKey, setSortKey] = useState("name");
   const [sortOrder, setSortOrder] = useState("asc");
 
-  // ✅ Compute filtered and sorted talents (always declared before return)
   const filteredTalents = useMemo(() => {
     if (!Array.isArray(talents)) return [];
 
@@ -38,12 +37,10 @@ function Talents({ talents }) {
     }
   };
 
-  // ✅ Now handle rendering logic
   if (!talents || talents.length === 0) {
     return (
       <div className="talents-loading">
-        <h2>Loading Talents...</h2>
-        <p>Please wait while we fetch data from the database.</p>
+        <p>Loading Talents...</p>
       </div>
     );
   }
@@ -51,11 +48,11 @@ function Talents({ talents }) {
   return (
     <div className="talents-page">
       <div className="talents-header">
-        <h1>All Talents</h1>
-        <p className="subtitle">
-          A complete list of Wrath & Glory talents. Click a talent to view details.
+        <h1>Talents Index</h1>
+        <p>
+          A complete record of every known Wrath & Glory talent. Study the
+          abilities and discover your path to power.
         </p>
-
         <div className="search-bar">
           <input
             type="text"
@@ -68,53 +65,50 @@ function Talents({ talents }) {
       </div>
 
       {filteredTalents.length === 0 ? (
-        <p>No talents found matching your search.</p>
+        <p className="no-results">No talents found matching your search.</p>
       ) : (
-        <table className="talent-table">
-          <thead>
-            <tr>
-              <th onClick={() => handleSort("name")}>
-                Name {sortKey === "name" && (sortOrder === "asc" ? "▲" : "▼")}
-              </th>
-              <th onClick={() => handleSort("xp_cost")}>
-                XP Cost {sortKey === "xp_cost" && (sortOrder === "asc" ? "▲" : "▼")}
-              </th>
-              <th onClick={() => handleSort("requirements")}>
-                Requirements{" "}
-                {sortKey === "requirements" && (sortOrder === "asc" ? "▲" : "▼")}
-              </th>
-              <th>Effect</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredTalents.map((talent) => (
-              <tr
-                key={talent.id}
-                onClick={() => setSelectedTalent(talent)}
-                className="talent-row"
-              >
-                <td className="talent-name">{talent.name}</td>
-                <td>{talent.xp_cost ?? "—"}</td>
-                <td>{talent.requirements || "—"}</td>
-                <td className="talent-effect">
-                  {talent.effect?.length > 80
-                    ? talent.effect.substring(0, 80) + "..."
-                    : talent.effect}
-                </td>
+        <div className="talent-table-container">
+          <table className="talent-table styled-table">
+            <thead>
+              <tr>
+                <th onClick={() => handleSort("name")}>
+                  Name {sortKey === "name" && (sortOrder === "asc" ? "▲" : "▼")}
+                </th>
+                <th onClick={() => handleSort("xp_cost")}>
+                  XP {sortKey === "xp_cost" && (sortOrder === "asc" ? "▲" : "▼")}
+                </th>
+                <th onClick={() => handleSort("requirements")}>
+                  Requirements{" "}
+                  {sortKey === "requirements" && (sortOrder === "asc" ? "▲" : "▼")}
+                </th>
+                <th>Effect</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {filteredTalents.map((talent) => (
+                <tr
+                  key={talent.id}
+                  onClick={() => setSelectedTalent(talent)}
+                  className="talent-row"
+                >
+                  <td className="talent-name">{talent.name}</td>
+                  <td>{talent.xp_cost ?? "—"}</td>
+                  <td>{talent.requirements || "—"}</td>
+                  <td className="talent-effect">
+                    {talent.effect?.length > 80
+                      ? talent.effect.substring(0, 80) + "..."
+                      : talent.effect}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
 
       {selectedTalent && (
-        <Talent
-          talent={selectedTalent}
-          onClose={() => setSelectedTalent(null)}
-        />
+        <Talent talent={selectedTalent} onClose={() => setSelectedTalent(null)} />
       )}
     </div>
   );
 }
-
-export default Talents;

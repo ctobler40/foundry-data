@@ -16,23 +16,40 @@ export default function RegroupActions() {
       .catch(() => setLoading(false));
   }, []);
 
-  if (loading) return <p>Loading Regroup Actions...</p>;
+  if (loading)
+    return (
+      <div className="regroup-loading">
+        <p>Loading Regroup Actions...</p>
+      </div>
+    );
 
   return (
-    <div className="page-container">
-      <h2 className="page-title">Regroup Actions</h2>
+    <div className="regroup-page">
+      <div className="regroup-header">
+        <h1>Regroup Actions</h1>
+        <p>
+          During any Regroup, each agent may perform one of the following
+          actions to restore, prepare, or recover before the next mission.
+        </p>
+      </div>
+
       <div className="regroup-grid">
         {actions.map((a) => (
           <div key={a.id} className="regroup-card">
-            <h3>{a.name}</h3>
-            <p>{a.description}</p>
+            <div className="regroup-title-bar">
+              <h3>{a.name}</h3>
+            </div>
+            <p className="regroup-desc">{a.description}</p>
+            {a.notes && <p className="regroup-notes">{a.notes}</p>}
+
             {a.options && a.options.length > 0 && (
               <div className="options-section">
-                <h4>Options:</h4>
-                <ul>
+                <h4>Available Options</h4>
+                <ul className="option-list">
                   {a.options.map((opt) => (
-                    <li key={opt.id}>
-                      <strong>{opt.title}:</strong> {opt.effect}
+                    <li key={opt.id} className="option-item">
+                      <span className="option-title">{opt.title}</span>
+                      <span className="option-effect">{opt.effect}</span>
                     </li>
                   ))}
                 </ul>
