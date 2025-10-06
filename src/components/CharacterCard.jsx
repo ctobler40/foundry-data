@@ -1,6 +1,16 @@
 import React from "react";
 
 function CharacterCard({ char, onClick, onEdit }) {
+  // Determine color for status
+  const getStatusColor = (status) => {
+    if (!status) return "gray";
+    const normalized = status.toLowerCase();
+    if (normalized === "alive") return "green";
+    if (normalized === "dead") return "red";
+    if (normalized === "missing") return "gold"; // yellowish
+    return "gray";
+  };
+
   return (
     <div key={char.id} className="character-card">
       <div className="character-content">
@@ -26,7 +36,15 @@ function CharacterCard({ char, onClick, onEdit }) {
         <p>{char.description}</p>
 
         <p className="status-line">
-          <strong>Status:</strong> {char.status_label || "Unknown"}
+          <strong>Status:</strong>{" "}
+          <span
+            style={{
+              color: getStatusColor(char.status_label),
+              fontWeight: "bold",
+            }}
+          >
+            {char.status_label || "Unknown"}
+          </span>
         </p>
 
         {char.causeofdeath && (

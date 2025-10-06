@@ -221,6 +221,66 @@ app.delete("/api/characters/:id", async (req: Request, res: Response) => {
   }
 });
 
+// ============================================================================
+// CAMPAIGN ROUTES
+// ============================================================================
+app.get("/api/campaign", async (req: Request, res: Response) => {
+  try {
+    const { rows } = await db.query("SELECT * FROM campaign ORDER BY id LIMIT 1");
+    if (rows.length === 0) return res.status(404).json({ error: "No campaign found" });
+    res.json(rows[0]);
+  } catch (err) {
+    console.error("Error fetching campaign:", err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+app.get("/api/campaign/factions", async (req: Request, res: Response) => {
+  try {
+    const { rows } = await db.query("SELECT * FROM campaign_factions ORDER BY id");
+    res.json(rows);
+  } catch (err) {
+    console.error("Error fetching factions:", err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+app.get("/api/campaign/planets", async (req: Request, res: Response) => {
+  try {
+    const { rows } = await db.query("SELECT * FROM campaign_planets ORDER BY id");
+    res.json(rows);
+  } catch (err) {
+    console.error("Error fetching planets:", err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+app.get("/api/campaign/groups", async (req: Request, res: Response) => {
+  try {
+    const { rows } = await db.query("SELECT * FROM campaign_groups ORDER BY id");
+    res.json(rows);
+  } catch (err) {
+    console.error("Error fetching groups:", err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// (Optional) Admin routes for adding or updating data
+app.post("/api/campaign", async (req: Request, res: Response) => {
+  try {
+    const { title, description, setting, current_state, call_for_aid } = req.body;
+    const { rows } = await db.query(
+      `INSERT INTO campaign (title, description, setting, current_state, call_for_aid)
+       VALUES ($1, $2, $3, $4, $5)
+       RETURNING *`,
+      [title, description, setting, current_state, call_for_aid]
+    );
+    res.status(201).json(rows[0]);
+  } catch (err) {
+    console.error("Error creating campaign:", err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
 
 // ============================================================================
 // SUPPORT TABLE ROUTES (characterImportance, characterStatus)
