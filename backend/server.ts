@@ -1326,6 +1326,137 @@ app.get("/api/characterStatus", async (req: Request, res: Response) => {
   }
 });
 
+// ============================================================================
+// MAIN CHARACTERS ROUTES (FAFO)
+// ============================================================================
+
+// Get all main characters (joined with base character info)
+app.get("/api/mainCharacters", async (req: Request, res: Response) => {
+  try {
+    const { rows } = await db.query(`
+      SELECT 
+        mc.*, 
+        c.name AS base_name,
+        c.description AS base_description,
+        ci.importance AS importance_label,
+        cs.status AS status_label
+      FROM main_characters mc
+      LEFT JOIN characters c ON mc.character_id = c.id
+      LEFT JOIN characterimportance ci ON c.characterimportance = ci.id
+      LEFT JOIN characterstatus cs ON c.status = cs.id
+      ORDER BY mc.id ASC;
+    `);
+    res.json(rows);
+  } catch (err) {
+    console.error("Error fetching main characters:", err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// Get single main character by ID
+app.get("/api/mainCharacters/:id", async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { rows } = await db.query(`
+      SELECT 
+        mc.*, 
+        c.name AS base_name,
+        c.description AS base_description,
+        ci.importance AS importance_label,
+        cs.status AS status_label
+      FROM main_characters mc
+      LEFT JOIN characters c ON mc.character_id = c.id
+      LEFT JOIN characterimportance ci ON c.characterimportance = ci.id
+      LEFT JOIN characterstatus cs ON c.status = cs.id
+      WHERE mc.id = $1;
+    `, [id]);
+
+    if (rows.length === 0)
+      return res.status(404).json({ error: "Main Character not found" });
+    res.json(rows[0]);
+  } catch (err) {
+    console.error("Error fetching main character:", err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// Create new main character
+app.post("/api/mainCharacters", async (req: Request, res: Response) => {
+  try {
+    const {
+      name,
+      photo_url,
+      personal_details,
+      background,
+      notable_quotes,
+      notable_moments,
+      character_id
+    } = req.body;
+
+    const { rows } = await db.query(
+      `INSERT INTO main_characters 
+       (name, photo_url, personal_details, background, notable_quotes, notable_moments, character_id)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)
+       RETURNING *`,
+      [name, photo_url, personal_details, background, notable_quotes, notable_moments, character_id]
+    );
+
+    res.status(201).json(rows[0]);
+  } catch (err) {
+    console.error("Error creating main character:", err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// Update existing main character
+app.put("/api/mainCharacters/:id", async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const {
+      name,
+      photo_url,
+      personal_details,
+      background,
+      notable_quotes,
+      notable_moments,
+      character_id
+    } = req.body;
+
+    const { rows } = await db.query(
+      `UPDATE main_characters
+       SET name = $1, 
+           photo_url = $2, 
+           personal_details = $3, 
+           background = $4, 
+           notable_quotes = $5, 
+           notable_moments = $6, 
+           character_id = $7
+       WHERE id = $8
+       RETURNING *`,
+      [name, photo_url, personal_details, background, notable_quotes, notable_moments, character_id, id]
+    );
+
+    if (rows.length === 0)
+      return res.status(404).json({ error: "Main Character not found" });
+    res.json(rows[0]);
+  } catch (err) {
+    console.error("Error updating main character:", err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// Delete main character
+app.delete("/api/mainCharacters/:id", async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    await db.query("DELETE FROM main_characters WHERE id = $1", [id]);
+    res.json({ message: "Main Character deleted" });
+  } catch (err) {
+    console.error("Error deleting main character:", err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
 // ----------------------------------------
 // 🚀 Server Start
 // ----------------------------------------

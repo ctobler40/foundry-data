@@ -18,6 +18,18 @@ CREATE TABLE characters (
     iconhtml TEXT
 );
 
+CREATE TABLE main_characters (
+    id SERIAL PRIMARY KEY,
+    name TEXT NOT NULL,
+    photo_url TEXT,
+    personal_details TEXT,
+    background TEXT,
+    notable_quotes TEXT[],
+    notable_moments TEXT[],
+    created_at TIMESTAMP DEFAULT NOW(),
+    character_id INTEGER REFERENCES characters(id) ON DELETE SET NULL
+);
+
 CREATE TABLE talents (
     id SERIAL PRIMARY KEY,
     name TEXT NOT NULL,
