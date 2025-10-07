@@ -1,106 +1,17 @@
-import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
-function Campaign() {
-  const [campaign, setCampaign] = useState(null);
-  const [factions, setFactions] = useState([]);
-  const [planets, setPlanets] = useState([]);
-  const [groups, setGroups] = useState([]);
-
-  const API_URL = process.env.REACT_APP_API_URL || "http://localhost:6500/";
-
-  useEffect(() => {
-    fetch(`${API_URL}api/campaign`).then(res => res.json()).then(setCampaign);
-    fetch(`${API_URL}api/campaign/factions`).then(res => res.json()).then(setFactions);
-    fetch(`${API_URL}api/campaign/planets`).then(res => res.json()).then(setPlanets);
-    fetch(`${API_URL}api/campaign/groups`).then(res => res.json()).then(setGroups);
-  }, []);
-
+function Campaign({ campaign, planets }) {
   if (!campaign) return <p>Loading campaign...</p>;
 
   return (
     <div className="campaign-page" style={{ textAlign: "center", color: "#fff" }}>
+      {/* -------------------- OVERVIEW SECTION -------------------- */}
       <section className="hero-section">
         <h1 className="hero-title">{campaign.title}</h1>
         <p className="hero-subtitle">{campaign.description}</p>
       </section>
 
-      <section className="info-section">
-        <h2>Setting</h2>
-        <p className="section-text">{campaign.setting}</p>
-        <p className="section-text">{campaign.current_state}</p>
-        <p className="section-text">{campaign.call_for_aid}</p>
-        <div
-          className="feature-grid"
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
-            gap: "1.5rem",
-            justifyContent: "center",
-            marginTop: "1rem",
-          }}
-        >
-          {planets.map((p) => (
-            <div
-              key={p.id}
-              className="feature-card"
-              style={{
-                background: "#1e1e1e",
-                borderRadius: "12px",
-                padding: "1rem",
-                boxShadow: "0 0 10px rgba(0, 0, 255, 0.2)",
-              }}
-            >
-              <h2 style={{ color: "#4da6ff" }}>{p.name}</h2>
-              <p>{p.details}</p>
-              {p.population && <p><strong>Population:</strong> {p.population}</p>}
-              {p.exports && <p><strong>Exports:</strong> {p.exports}</p>}
-              {p.environment && <p><strong>Environment:</strong> {p.environment}</p>}
-            </div>
-          ))}
-        </div>
-        <h2>Other Groups</h2>
-        <ul style={{ listStyle: "none", padding: 0, marginTop: "1rem" }}>
-          {groups.map((g) => (
-            <li key={g.id} style={{ marginBottom: "0.75rem" }}>
-              <strong style={{ color: "#4da6ff" }}>{g.name}</strong>: {g.description}
-            </li>
-          ))}
-        </ul>
-      </section>
-
-      <section className="info-section">
-        <h2>Major Factions</h2>
-        <div
-          className="feature-grid"
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
-            gap: "1.5rem",
-            justifyContent: "center",
-            marginTop: "1rem",
-          }}
-        >
-          {factions.map((f) => (
-            <div
-              key={f.id}
-              className="feature-card"
-              style={{
-                background: "#1e1e1e",
-                borderRadius: "12px",
-                padding: "1rem",
-                boxShadow: "0 0 10px rgba(0, 0, 255, 0.2)",
-              }}
-            >
-              <h3 style={{ color: "#4da6ff" }}>{f.name}</h3>
-              <p>{f.description}</p>
-              {f.exports && <p><strong>Exports:</strong> {f.exports}</p>}
-              {f.territory && <p><strong>Territory:</strong> {f.territory}</p>}
-            </div>
-          ))}
-        </div>
-      </section>
-
+      {/* -------------------- CURRENT MEMBERS -------------------- */}
       <section className="info-section">
         <h2>FAFO</h2>
         <p>
@@ -179,6 +90,57 @@ function Campaign() {
             View All Characters
           </Link>
         </div>
+      </section>
+
+      {/* -------------------- PLANETS SECTION -------------------- */}
+      <section className="info-section" style={{ marginTop: "3rem" }}>
+        <h2>Discovered Planets</h2>
+        <p>Explore the key worlds within the Chalnath Expanse.</p>
+
+        {planets && planets.length > 0 ? (
+          <div
+            className="feature-grid"
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
+              gap: "1.5rem",
+              justifyContent: "center",
+              marginTop: "1.5rem",
+            }}
+          >
+            {planets.map((planet) => (
+              <Link
+                key={planet.id}
+                to={`/campaign/${planet.name.toLowerCase()}`}
+                style={{ textDecoration: "none", color: "#fff" }}
+              >
+                <div
+                  className="feature-card"
+                  style={{
+                    background: "#1e1e1e",
+                    borderRadius: "12px",
+                    padding: "1rem",
+                    boxShadow: "0 0 10px rgba(0, 0, 255, 0.2)",
+                    transition: "transform 0.2s ease, box-shadow 0.2s ease",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = "scale(1.03)";
+                    e.currentTarget.style.boxShadow = "0 0 15px rgba(77,166,255,0.4)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = "scale(1)";
+                    e.currentTarget.style.boxShadow = "0 0 10px rgba(0,0,255,0.2)";
+                  }}
+                >
+                  <h3 style={{ color: "#4da6ff" }}>{planet.name}</h3>
+                  <p>{planet.details ? planet.details.slice(0, 120) + "..." : "View details"}</p>
+                </div>
+              </Link>
+            ))}
+          </div>
+        ) : (
+          <p style={{ marginTop: "1rem" }}>No planets available yet.</p>
+        )}
       </section>
     </div>
   );

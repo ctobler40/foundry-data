@@ -339,6 +339,255 @@ app.post("/api/regroupActions/:id/options", async (req: Request, res: Response) 
 });
 
 // ============================================================================
+// ASCENSION PACKAGES ROUTES
+// ============================================================================
+app.get("/api/ascensionPackages", async (req: Request, res: Response) => {
+  try {
+    const { rows } = await db.query(`
+      SELECT a.*,
+             COALESCE(
+               json_agg(
+                 json_build_object(
+                   'id', ae.id,
+                   'effect_type', ae.effect_type,
+                   'effect_description', ae.effect_description
+                 )
+               ) FILTER (WHERE ae.id IS NOT NULL), '[]'
+             ) AS effects,
+             COALESCE(
+               json_agg(
+                 json_build_object(
+                   'id', ak.id,
+                   'keyword', ak.keyword
+                 )
+               ) FILTER (WHERE ak.id IS NOT NULL), '[]'
+             ) AS keywords,
+             COALESCE(
+               json_agg(
+                 json_build_object(
+                   'id', ax.id,
+                   'character_name', ax.character_name,
+                   'example_text', ax.example_text
+                 )
+               ) FILTER (WHERE ax.id IS NOT NULL), '[]'
+             ) AS examples
+      FROM ascension_packages a
+      LEFT JOIN ascension_effects ae ON a.id = ae.ascension_id
+      LEFT JOIN ascension_keywords ak ON a.id = ak.ascension_id
+      LEFT JOIN ascension_examples ax ON a.id = ax.ascension_id
+      GROUP BY a.id
+      ORDER BY a.id ASC;
+    `);
+    res.json(rows);
+  } catch (err) {
+    console.error("Error fetching ascension packages:", err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+app.get("/api/ascensionPackages/:id", async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { rows } = await db.query(`
+      SELECT a.*,
+             COALESCE(
+               json_agg(
+                 json_build_object(
+                   'id', ae.id,
+                   'effect_type', ae.effect_type,
+                   'effect_description', ae.effect_description
+                 )
+               ) FILTER (WHERE ae.id IS NOT NULL), '[]'
+             ) AS effects,
+             COALESCE(
+               json_agg(
+                 json_build_object(
+                   'id', ak.id,
+                   'keyword', ak.keyword
+                 )
+               ) FILTER (WHERE ak.id IS NOT NULL), '[]'
+             ) AS keywords,
+             COALESCE(
+               json_agg(
+                 json_build_object(
+                   'id', ax.id,
+                   'character_name', ax.character_name,
+                   'example_text', ax.example_text
+                 )
+               ) FILTER (WHERE ax.id IS NOT NULL), '[]'
+             ) AS examples
+      FROM ascension_packages a
+      LEFT JOIN ascension_effects ae ON a.id = ae.ascension_id
+      LEFT JOIN ascension_keywords ak ON a.id = ak.ascension_id
+      LEFT JOIN ascension_examples ax ON a.id = ax.ascension_id
+      WHERE a.id = $1
+      GROUP BY a.id;
+    `, [id]);
+    if (rows.length === 0)
+      return res.status(404).json({ error: "Ascension Package not found" });
+    res.json(rows[0]);
+  } catch (err) {
+    console.error("Error fetching ascension package:", err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+app.post("/api/ascensionPackages", async (req: Request, res: Response) => {
+  try {
+    const {
+      name,
+      tagline,
+      description,
+      xp_cost,
+      keyword,
+      influence_bonus,
+      requirements,
+      story_element,
+      example_usage,
+      source_page,
+      source_file,
+    } = req.body;
+
+    const { rows } = await db.query(
+      `INSERT INTO ascension_packages 
+       (name, tagline, description, xp_cost, keyword, influence_bonus, requirements, story_element, example_usage, source_page, source_file)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
+       RETURNING *`,
+      [
+        name,
+        tagline,
+        description,
+        xp_cost,
+        keyword,
+        influence_bonus,
+        requirements,
+        story_element,
+        example_usage,
+        source_page,
+        source_file || "AscensionCompendiumv1",
+      ]
+    );
+    res.status(201).json(rows[0]);
+  } catch (err) {
+    console.error("Error creating ascension package:", err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+app.put("/api/ascensionPackages/:id", async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const {
+      name,
+      tagline,
+      description,
+      xp_cost,
+      keyword,
+      influence_bonus,
+      requirements,
+      story_element,
+      example_usage,
+      source_page,
+      source_file,
+    } = req.body;
+
+    const { rows } = await db.query(
+      `UPDATE ascension_packages
+       SET name=$1, tagline=$2, description=$3, xp_cost=$4, keyword=$5,
+           influence_bonus=$6, requirements=$7, story_element=$8, 
+           example_usage=$9, source_page=$10, source_file=$11
+       WHERE id=$12
+       RETURNING *`,
+      [
+        name,
+        tagline,
+        description,
+        xp_cost,
+        keyword,
+        influence_bonus,
+        requirements,
+        story_element,
+        example_usage,
+        source_page,
+        source_file,
+        id,
+      ]
+    );
+    if (rows.length === 0)
+      return res.status(404).json({ error: "Ascension Package not found" });
+    res.json(rows[0]);
+  } catch (err) {
+    console.error("Error updating ascension package:", err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+app.delete("/api/ascensionPackages/:id", async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    await db.query("DELETE FROM ascension_packages WHERE id = $1", [id]);
+    res.json({ message: "Ascension Package deleted" });
+  } catch (err) {
+    console.error("Error deleting ascension package:", err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// ------------------------------------------------------------------
+// Optional Nested Routes for Related Tables
+// ------------------------------------------------------------------
+app.post("/api/ascensionPackages/:id/effects", async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { effect_type, effect_description } = req.body;
+    const { rows } = await db.query(
+      `INSERT INTO ascension_effects (ascension_id, effect_type, effect_description)
+       VALUES ($1,$2,$3)
+       RETURNING *`,
+      [id, effect_type, effect_description]
+    );
+    res.status(201).json(rows[0]);
+  } catch (err) {
+    console.error("Error adding ascension effect:", err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+app.post("/api/ascensionPackages/:id/keywords", async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { keyword } = req.body;
+    const { rows } = await db.query(
+      `INSERT INTO ascension_keywords (ascension_id, keyword)
+       VALUES ($1,$2)
+       RETURNING *`,
+      [id, keyword]
+    );
+    res.status(201).json(rows[0]);
+  } catch (err) {
+    console.error("Error adding ascension keyword:", err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+app.post("/api/ascensionPackages/:id/examples", async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { character_name, example_text } = req.body;
+    const { rows } = await db.query(
+      `INSERT INTO ascension_examples (ascension_id, character_name, example_text)
+       VALUES ($1,$2,$3)
+       RETURNING *`,
+      [id, character_name, example_text]
+    );
+    res.status(201).json(rows[0]);
+  } catch (err) {
+    console.error("Error adding ascension example:", err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// ============================================================================
 // SUPPORT TABLE ROUTES (characterImportance, characterStatus)
 // ============================================================================
 

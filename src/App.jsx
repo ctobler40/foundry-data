@@ -17,6 +17,8 @@ import RegroupActions from "./pages/RegroupActions";
 import Archives from "./pages/Archives";
 import Footer from "./components/Footer";
 import Search from "./components/Search";
+import Kalidonia from "./pages/ChalnathLocations/Kalidonia";
+import Ascensions from "./pages/Ascensions";
 
 const API_URL = process.env.REACT_APP_API_URL || "http://localhost:6500/";
 
@@ -81,6 +83,7 @@ function App() {
               path="/characters"
               element={<Characters characters={characters} />}
             />
+
             <Route
               path="/campaign"
               element={
@@ -92,8 +95,12 @@ function App() {
                 />
               }
             />
-            <Route path="/regroup-actions" element={<RegroupActions />} />
+            <Route path="/campaign/kalidonia" element={<Kalidonia />} />
+
             <Route path="/archives" element={<Archives />} />
+            <Route path="/regroup-actions" element={<RegroupActions />} />
+            <Route path="/ascensions" element={<Ascensions />} />
+            
             <Route path="/search" element={<Search />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

@@ -84,3 +84,38 @@ CREATE TABLE regroup_action_options (
     effect TEXT,
     example_usage TEXT
 );
+
+CREATE TABLE ascension_packages (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    tagline VARCHAR(150),
+    description TEXT,
+    xp_cost TEXT,
+    keyword TEXT,
+    influence_bonus TEXT,
+    requirements TEXT,
+    story_element TEXT,
+    example_usage TEXT,
+    source_page INT,
+    source_file VARCHAR(150) DEFAULT 'AscensionCompendiumv1'
+);
+
+CREATE TABLE ascension_keywords (
+    id SERIAL PRIMARY KEY,
+    ascension_id INT REFERENCES ascension_packages(id) ON DELETE CASCADE,
+    keyword VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE ascension_effects (
+    id SERIAL PRIMARY KEY,
+    ascension_id INT REFERENCES ascension_packages(id) ON DELETE CASCADE,
+    effect_type VARCHAR(100),
+    effect_description TEXT
+);
+
+CREATE TABLE ascension_examples (
+    id SERIAL PRIMARY KEY,
+    ascension_id INT REFERENCES ascension_packages(id) ON DELETE CASCADE,
+    character_name VARCHAR(100),
+    example_text TEXT
+);
