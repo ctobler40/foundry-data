@@ -28,8 +28,22 @@ function Archives() {
           </div>
 
           <div className="feature-card">
+            <h3>Combat System</h3>
+            <p>
+              Access a comprehensive library of Wrath & Glory combat mechanics — actions,
+              options, modifiers, conditions, criticals, and environmental hazards.
+            </p>
+            <Link to="/combat" className="link-blue">
+              Explore →
+            </Link>
+          </div>
+
+          <div className="feature-card">
             <h3>Ascension Packages</h3>
-            <p>Explore the seventeen homebrew faction-agnostic ascension packages, with the aim of being suitable for any type of campaign, from Imperium to Xeno to Chaos.</p>
+            <p>
+              Explore the seventeen homebrew faction-agnostic ascension packages, designed
+              to fit campaigns across the Imperium, Xenos, and Chaos alike.
+            </p>
             <Link to="/ascensions" className="link-blue">
               Explore →
             </Link>

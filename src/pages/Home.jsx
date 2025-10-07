@@ -47,9 +47,14 @@ function Home() {
           </div>
 
           <div className="feature-card">
-            <h3>Abilities</h3>
-            <p>(Coming soon) Discover Psyker powers, Faith abilities, and faction-specific boons.</p>
-            <span className="coming-soon">Coming Soon</span>
+            <h3>Combat System</h3>
+            <p>
+              Access a comprehensive library of Wrath & Glory combat mechanics — actions,
+              options, modifiers, conditions, criticals, and environmental hazards.
+            </p>
+            <Link to="/combat" className="link-blue">
+              Explore →
+            </Link>
           </div>
         </div>
 

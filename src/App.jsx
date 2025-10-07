@@ -7,18 +7,32 @@ import {
 } from "react-router-dom";
 import "./App.css";
 
+// ----- Core Pages -----
 import Home from "./pages/Home";
 import Talents from "./pages/Talents";
 import Talent from "./components/Talent";
 import Characters from "./pages/Characters";
 import Campaign from "./pages/Campaign";
-import Navbar from "./components/Navbar";
 import RegroupActions from "./pages/RegroupActions";
 import Archives from "./pages/Archives";
+import Ascensions from "./pages/Ascensions";
+import Kalidonia from "./pages/ChalnathLocations/Kalidonia";
+
+// ----- Layout -----
+import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import Search from "./components/Search";
-import Kalidonia from "./pages/ChalnathLocations/Kalidonia";
-import Ascensions from "./pages/Ascensions";
+
+// ----- Combat System Pages -----
+import Combat from "./pages/Combat";
+import CombatActions from "./pages/combat/CombatActions";
+import CombatOptions from "./pages/combat/CombatOptions";
+import AttackModifiers from "./pages/combat/AttackModifiers";
+import Conditions from "./pages/combat/Conditions";
+import CombatRefs from "./pages/combat/CombatRefs";
+import CriticalHits from "./pages/combat/CriticalHits";
+import CriticalComps from "./pages/combat/CriticalComps";
+import EnvironmentHazards from "./pages/combat/EnvironmentHazards";
 
 const API_URL = process.env.REACT_APP_API_URL || "http://localhost:6500/";
 
@@ -79,10 +93,7 @@ function App() {
             <Route path="/" element={<Home />} />
             <Route path="/talents" element={<Talents talents={talents} />} />
             <Route path="/talent/:id" element={<Talent talents={talents} />} />
-            <Route
-              path="/characters"
-              element={<Characters characters={characters} />}
-            />
+            <Route path="/characters" element={<Characters characters={characters} />} />
 
             <Route
               path="/campaign"
@@ -100,7 +111,18 @@ function App() {
             <Route path="/archives" element={<Archives />} />
             <Route path="/regroup-actions" element={<RegroupActions />} />
             <Route path="/ascensions" element={<Ascensions />} />
-            
+
+            {/* ----- Combat System Pages ----- */}
+            <Route path="/combat" element={<Combat />} />
+            <Route path="/combat/actions" element={<CombatActions />} />
+            <Route path="/combat/options" element={<CombatOptions />} />
+            <Route path="/combat/modifiers" element={<AttackModifiers />} />
+            <Route path="/combat/conditions" element={<Conditions />} />
+            <Route path="/combat/references" element={<CombatRefs />} />
+            <Route path="/combat/critical-hits" element={<CriticalHits />} />
+            <Route path="/combat/complications" element={<CriticalComps />} />
+            <Route path="/combat/environmental-hazards" element={<EnvironmentHazards />} />
+
             <Route path="/search" element={<Search />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
