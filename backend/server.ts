@@ -588,6 +588,719 @@ app.post("/api/ascensionPackages/:id/examples", async (req: Request, res: Respon
 });
 
 // ============================================================================
+// COMBAT ACTIONS ROUTES
+// ============================================================================
+
+// Get all combat actions
+app.get("/api/combatActions", async (req: Request, res: Response) => {
+  try {
+    const { rows } = await db.query("SELECT * FROM combat_actions ORDER BY id ASC");
+    res.json(rows);
+  } catch (err) {
+    console.error("Error fetching combat actions:", err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// Get a single combat action by ID
+app.get("/api/combatActions/:id", async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { rows } = await db.query("SELECT * FROM combat_actions WHERE id = $1", [id]);
+    if (rows.length === 0) return res.status(404).json({ error: "Combat Action not found" });
+    res.json(rows[0]);
+  } catch (err) {
+    console.error("Error fetching combat action:", err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// Create a new combat action
+app.post("/api/combatActions", async (req: Request, res: Response) => {
+  try {
+    const {
+      name,
+      action_type,
+      action_category,
+      description,
+      dice_bonus,
+      requirements,
+      duration,
+      effects,
+      test_required,
+      source_page
+    } = req.body;
+
+    const { rows } = await db.query(
+      `INSERT INTO combat_actions 
+        (name, action_type, action_category, description, dice_bonus, requirements, duration, effects, test_required, source_page)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
+       RETURNING *`,
+      [name, action_type, action_category, description, dice_bonus, requirements, duration, effects, test_required, source_page]
+    );
+    res.status(201).json(rows[0]);
+  } catch (err) {
+    console.error("Error creating combat action:", err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// Update an existing combat action
+app.put("/api/combatActions/:id", async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const {
+      name,
+      action_type,
+      action_category,
+      description,
+      dice_bonus,
+      requirements,
+      duration,
+      effects,
+      test_required,
+      source_page
+    } = req.body;
+
+    const { rows } = await db.query(
+      `UPDATE combat_actions
+       SET name=$1, action_type=$2, action_category=$3, description=$4, dice_bonus=$5,
+           requirements=$6, duration=$7, effects=$8, test_required=$9, source_page=$10
+       WHERE id=$11
+       RETURNING *`,
+      [name, action_type, action_category, description, dice_bonus, requirements, duration, effects, test_required, source_page, id]
+    );
+
+    if (rows.length === 0) return res.status(404).json({ error: "Combat Action not found" });
+    res.json(rows[0]);
+  } catch (err) {
+    console.error("Error updating combat action:", err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// Delete a combat action
+app.delete("/api/combatActions/:id", async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    await db.query("DELETE FROM combat_actions WHERE id = $1", [id]);
+    res.json({ message: "Combat Action deleted" });
+  } catch (err) {
+    console.error("Error deleting combat action:", err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// ============================================================================
+// COMBAT OPTIONS ROUTES
+// ============================================================================
+
+// Get all combat options
+app.get("/api/combatOptions", async (req: Request, res: Response) => {
+  try {
+    const { rows } = await db.query("SELECT * FROM combat_options ORDER BY id ASC");
+    res.json(rows);
+  } catch (err) {
+    console.error("Error fetching combat options:", err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// Get a single combat option by ID
+app.get("/api/combatOptions/:id", async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { rows } = await db.query("SELECT * FROM combat_options WHERE id = $1", [id]);
+    if (rows.length === 0)
+      return res.status(404).json({ error: "Combat Option not found" });
+    res.json(rows[0]);
+  } catch (err) {
+    console.error("Error fetching combat option:", err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// Create a new combat option
+app.post("/api/combatOptions", async (req: Request, res: Response) => {
+  try {
+    const { name, option_type, attack_type, description, dn_modifier, effect, source_page } =
+      req.body;
+
+    const { rows } = await db.query(
+      `INSERT INTO combat_options 
+       (name, option_type, attack_type, description, dn_modifier, effect, source_page)
+       VALUES ($1,$2,$3,$4,$5,$6,$7)
+       RETURNING *`,
+      [name, option_type, attack_type, description, dn_modifier, effect, source_page]
+    );
+
+    res.status(201).json(rows[0]);
+  } catch (err) {
+    console.error("Error creating combat option:", err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// Update an existing combat option
+app.put("/api/combatOptions/:id", async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { name, option_type, attack_type, description, dn_modifier, effect, source_page } =
+      req.body;
+
+    const { rows } = await db.query(
+      `UPDATE combat_options
+       SET name=$1, option_type=$2, attack_type=$3, description=$4, dn_modifier=$5,
+           effect=$6, source_page=$7
+       WHERE id=$8
+       RETURNING *`,
+      [name, option_type, attack_type, description, dn_modifier, effect, source_page, id]
+    );
+
+    if (rows.length === 0)
+      return res.status(404).json({ error: "Combat Option not found" });
+    res.json(rows[0]);
+  } catch (err) {
+    console.error("Error updating combat option:", err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// Delete a combat option
+app.delete("/api/combatOptions/:id", async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    await db.query("DELETE FROM combat_options WHERE id = $1", [id]);
+    res.json({ message: "Combat Option deleted" });
+  } catch (err) {
+    console.error("Error deleting combat option:", err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+// ============================================================================
+// CONDITIONS ROUTES
+// ============================================================================
+
+// Get all conditions
+app.get("/api/conditions", async (req: Request, res: Response) => {
+  try {
+    const { rows } = await db.query("SELECT * FROM conditions ORDER BY id ASC");
+    res.json(rows);
+  } catch (err) {
+    console.error("Error fetching conditions:", err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// Get a single condition by ID
+app.get("/api/conditions/:id", async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { rows } = await db.query("SELECT * FROM conditions WHERE id = $1", [id]);
+    if (rows.length === 0)
+      return res.status(404).json({ error: "Condition not found" });
+    res.json(rows[0]);
+  } catch (err) {
+    console.error("Error fetching condition:", err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// Create a new condition
+app.post("/api/conditions", async (req: Request, res: Response) => {
+  try {
+    const { name, description, mechanical_effect, duration, removal_method, source_page } =
+      req.body;
+
+    const { rows } = await db.query(
+      `INSERT INTO conditions 
+       (name, description, mechanical_effect, duration, removal_method, source_page)
+       VALUES ($1,$2,$3,$4,$5,$6)
+       RETURNING *`,
+      [name, description, mechanical_effect, duration, removal_method, source_page]
+    );
+
+    res.status(201).json(rows[0]);
+  } catch (err) {
+    console.error("Error creating condition:", err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// Update an existing condition
+app.put("/api/conditions/:id", async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { name, description, mechanical_effect, duration, removal_method, source_page } =
+      req.body;
+
+    const { rows } = await db.query(
+      `UPDATE conditions
+       SET name=$1, description=$2, mechanical_effect=$3, duration=$4,
+           removal_method=$5, source_page=$6
+       WHERE id=$7
+       RETURNING *`,
+      [name, description, mechanical_effect, duration, removal_method, source_page, id]
+    );
+
+    if (rows.length === 0)
+      return res.status(404).json({ error: "Condition not found" });
+    res.json(rows[0]);
+  } catch (err) {
+    console.error("Error updating condition:", err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// Delete a condition
+app.delete("/api/conditions/:id", async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    await db.query("DELETE FROM conditions WHERE id = $1", [id]);
+    res.json({ message: "Condition deleted" });
+  } catch (err) {
+    console.error("Error deleting condition:", err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// ============================================================================
+// COMBAT REFERENCES ROUTES
+// ============================================================================
+
+// Get all combat references
+app.get("/api/combatReferences", async (req: Request, res: Response) => {
+  try {
+    const { rows } = await db.query("SELECT * FROM combat_references ORDER BY id ASC");
+    res.json(rows);
+  } catch (err) {
+    console.error("Error fetching combat references:", err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// Get a single combat reference by ID
+app.get("/api/combatReferences/:id", async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { rows } = await db.query("SELECT * FROM combat_references WHERE id = $1", [id]);
+    if (rows.length === 0)
+      return res.status(404).json({ error: "Combat Reference not found" });
+    res.json(rows[0]);
+  } catch (err) {
+    console.error("Error fetching combat reference:", err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// Create a new combat reference
+app.post("/api/combatReferences", async (req: Request, res: Response) => {
+  try {
+    const { section, topic, summary, reference_page } = req.body;
+
+    const { rows } = await db.query(
+      `INSERT INTO combat_references 
+       (section, topic, summary, reference_page)
+       VALUES ($1,$2,$3,$4)
+       RETURNING *`,
+      [section, topic, summary, reference_page]
+    );
+
+    res.status(201).json(rows[0]);
+  } catch (err) {
+    console.error("Error creating combat reference:", err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// Update an existing combat reference
+app.put("/api/combatReferences/:id", async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { section, topic, summary, reference_page } = req.body;
+
+    const { rows } = await db.query(
+      `UPDATE combat_references
+       SET section=$1, topic=$2, summary=$3, reference_page=$4
+       WHERE id=$5
+       RETURNING *`,
+      [section, topic, summary, reference_page, id]
+    );
+
+    if (rows.length === 0)
+      return res.status(404).json({ error: "Combat Reference not found" });
+    res.json(rows[0]);
+  } catch (err) {
+    console.error("Error updating combat reference:", err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// Delete a combat reference
+app.delete("/api/combatReferences/:id", async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    await db.query("DELETE FROM combat_references WHERE id = $1", [id]);
+    res.json({ message: "Combat Reference deleted" });
+  } catch (err) {
+    console.error("Error deleting combat reference:", err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+// ============================================================================
+// CRITICAL HITS ROUTES
+// ============================================================================
+
+// Get all critical hits
+app.get("/api/criticalHits", async (req: Request, res: Response) => {
+  try {
+    const { rows } = await db.query("SELECT * FROM critical_hits ORDER BY id ASC");
+    res.json(rows);
+  } catch (err) {
+    console.error("Error fetching critical hits:", err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// Get a single critical hit by ID
+app.get("/api/criticalHits/:id", async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { rows } = await db.query("SELECT * FROM critical_hits WHERE id = $1", [id]);
+    if (rows.length === 0)
+      return res.status(404).json({ error: "Critical Hit not found" });
+    res.json(rows[0]);
+  } catch (err) {
+    console.error("Error fetching critical hit:", err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// Create a new critical hit
+app.post("/api/criticalHits", async (req: Request, res: Response) => {
+  try {
+    const { roll_range, name, description, effect, glory_effect } = req.body;
+
+    const { rows } = await db.query(
+      `INSERT INTO critical_hits 
+       (roll_range, name, description, effect, glory_effect)
+       VALUES ($1,$2,$3,$4,$5)
+       RETURNING *`,
+      [roll_range, name, description, effect, glory_effect]
+    );
+
+    res.status(201).json(rows[0]);
+  } catch (err) {
+    console.error("Error creating critical hit:", err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// Update an existing critical hit
+app.put("/api/criticalHits/:id", async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { roll_range, name, description, effect, glory_effect } = req.body;
+
+    const { rows } = await db.query(
+      `UPDATE critical_hits
+       SET roll_range=$1, name=$2, description=$3, effect=$4, glory_effect=$5
+       WHERE id=$6
+       RETURNING *`,
+      [roll_range, name, description, effect, glory_effect, id]
+    );
+
+    if (rows.length === 0)
+      return res.status(404).json({ error: "Critical Hit not found" });
+    res.json(rows[0]);
+  } catch (err) {
+    console.error("Error updating critical hit:", err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// Delete a critical hit
+app.delete("/api/criticalHits/:id", async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    await db.query("DELETE FROM critical_hits WHERE id = $1", [id]);
+    res.json({ message: "Critical Hit deleted" });
+  } catch (err) {
+    console.error("Error deleting critical hit:", err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+// ============================================================================
+// COMBAT COMPLICATIONS ROUTES
+// ============================================================================
+
+// Get all combat complications
+app.get("/api/combatComplications", async (req: Request, res: Response) => {
+  try {
+    const { rows } = await db.query("SELECT * FROM combat_complications ORDER BY id ASC");
+    res.json(rows);
+  } catch (err) {
+    console.error("Error fetching combat complications:", err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// Get a single combat complication by ID
+app.get("/api/combatComplications/:id", async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { rows } = await db.query("SELECT * FROM combat_complications WHERE id = $1", [id]);
+    if (rows.length === 0)
+      return res.status(404).json({ error: "Combat Complication not found" });
+    res.json(rows[0]);
+  } catch (err) {
+    console.error("Error fetching combat complication:", err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// Create a new combat complication
+app.post("/api/combatComplications", async (req: Request, res: Response) => {
+  try {
+    const { roll_range, name, description, test_required, dn_example } = req.body;
+
+    const { rows } = await db.query(
+      `INSERT INTO combat_complications 
+       (roll_range, name, description, test_required, dn_example)
+       VALUES ($1,$2,$3,$4,$5)
+       RETURNING *`,
+      [roll_range, name, description, test_required, dn_example]
+    );
+
+    res.status(201).json(rows[0]);
+  } catch (err) {
+    console.error("Error creating combat complication:", err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// Update an existing combat complication
+app.put("/api/combatComplications/:id", async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { roll_range, name, description, test_required, dn_example } = req.body;
+
+    const { rows } = await db.query(
+      `UPDATE combat_complications
+       SET roll_range=$1, name=$2, description=$3, test_required=$4, dn_example=$5
+       WHERE id=$6
+       RETURNING *`,
+      [roll_range, name, description, test_required, dn_example, id]
+    );
+
+    if (rows.length === 0)
+      return res.status(404).json({ error: "Combat Complication not found" });
+    res.json(rows[0]);
+  } catch (err) {
+    console.error("Error updating combat complication:", err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// Delete a combat complication
+app.delete("/api/combatComplications/:id", async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    await db.query("DELETE FROM combat_complications WHERE id = $1", [id]);
+    res.json({ message: "Combat Complication deleted" });
+  } catch (err) {
+    console.error("Error deleting combat complication:", err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+// ============================================================================
+// ENVIRONMENTAL HAZARDS ROUTES
+// ============================================================================
+
+// Get all environmental hazards
+app.get("/api/environmentalHazards", async (req: Request, res: Response) => {
+  try {
+    const { rows } = await db.query("SELECT * FROM environmental_hazards ORDER BY id ASC");
+    res.json(rows);
+  } catch (err) {
+    console.error("Error fetching environmental hazards:", err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// Get a single environmental hazard by ID
+app.get("/api/environmentalHazards/:id", async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { rows } = await db.query("SELECT * FROM environmental_hazards WHERE id = $1", [id]);
+    if (rows.length === 0)
+      return res.status(404).json({ error: "Environmental Hazard not found" });
+    res.json(rows[0]);
+  } catch (err) {
+    console.error("Error fetching environmental hazard:", err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// Create a new environmental hazard
+app.post("/api/environmentalHazards", async (req: Request, res: Response) => {
+  try {
+    const {
+      name,
+      description,
+      effect,
+      test_required,
+      dn_example,
+      damage,
+      duration,
+    } = req.body;
+
+    const { rows } = await db.query(
+      `INSERT INTO environmental_hazards 
+       (name, description, effect, test_required, dn_example, damage, duration)
+       VALUES ($1,$2,$3,$4,$5,$6,$7)
+       RETURNING *`,
+      [name, description, effect, test_required, dn_example, damage, duration]
+    );
+
+    res.status(201).json(rows[0]);
+  } catch (err) {
+    console.error("Error creating environmental hazard:", err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// Update an existing environmental hazard
+app.put("/api/environmentalHazards/:id", async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const {
+      name,
+      description,
+      effect,
+      test_required,
+      dn_example,
+      damage,
+      duration,
+    } = req.body;
+
+    const { rows } = await db.query(
+      `UPDATE environmental_hazards
+       SET name=$1, description=$2, effect=$3, test_required=$4, dn_example=$5,
+           damage=$6, duration=$7
+       WHERE id=$8
+       RETURNING *`,
+      [name, description, effect, test_required, dn_example, damage, duration, id]
+    );
+
+    if (rows.length === 0)
+      return res.status(404).json({ error: "Environmental Hazard not found" });
+    res.json(rows[0]);
+  } catch (err) {
+    console.error("Error updating environmental hazard:", err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// Delete an environmental hazard
+app.delete("/api/environmentalHazards/:id", async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    await db.query("DELETE FROM environmental_hazards WHERE id = $1", [id]);
+    res.json({ message: "Environmental Hazard deleted" });
+  } catch (err) {
+    console.error("Error deleting environmental hazard:", err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+// ============================================================================
+// ATTACK MODIFIERS ROUTES
+// ============================================================================
+
+// Get all attack modifiers
+app.get("/api/attackModifiers", async (req: Request, res: Response) => {
+  try {
+    const { rows } = await db.query("SELECT * FROM attack_modifiers ORDER BY id ASC");
+    res.json(rows);
+  } catch (err) {
+    console.error("Error fetching attack modifiers:", err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// Get a single attack modifier by ID
+app.get("/api/attackModifiers/:id", async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { rows } = await db.query("SELECT * FROM attack_modifiers WHERE id = $1", [id]);
+    if (rows.length === 0)
+      return res.status(404).json({ error: "Attack Modifier not found" });
+    res.json(rows[0]);
+  } catch (err) {
+    console.error("Error fetching attack modifier:", err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// Create a new attack modifier
+app.post("/api/attackModifiers", async (req: Request, res: Response) => {
+  try {
+    const { name, modifier_type, description, effect, condition, applies_to, source_page } =
+      req.body;
+
+    const { rows } = await db.query(
+      `INSERT INTO attack_modifiers 
+       (name, modifier_type, description, effect, condition, applies_to, source_page)
+       VALUES ($1,$2,$3,$4,$5,$6,$7)
+       RETURNING *`,
+      [name, modifier_type, description, effect, condition, applies_to, source_page]
+    );
+
+    res.status(201).json(rows[0]);
+  } catch (err) {
+    console.error("Error creating attack modifier:", err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// Update an existing attack modifier
+app.put("/api/attackModifiers/:id", async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { name, modifier_type, description, effect, condition, applies_to, source_page } =
+      req.body;
+
+    const { rows } = await db.query(
+      `UPDATE attack_modifiers
+       SET name=$1, modifier_type=$2, description=$3, effect=$4, condition=$5,
+           applies_to=$6, source_page=$7
+       WHERE id=$8
+       RETURNING *`,
+      [name, modifier_type, description, effect, condition, applies_to, source_page, id]
+    );
+
+    if (rows.length === 0)
+      return res.status(404).json({ error: "Attack Modifier not found" });
+    res.json(rows[0]);
+  } catch (err) {
+    console.error("Error updating attack modifier:", err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// Delete an attack modifier
+app.delete("/api/attackModifiers/:id", async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    await db.query("DELETE FROM attack_modifiers WHERE id = $1", [id]);
+    res.json({ message: "Attack Modifier deleted" });
+  } catch (err) {
+    console.error("Error deleting attack modifier:", err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// ============================================================================
 // SUPPORT TABLE ROUTES (characterImportance, characterStatus)
 // ============================================================================
 

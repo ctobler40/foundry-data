@@ -28,6 +28,14 @@ function Archives() {
           </div>
 
           <div className="feature-card">
+            <h3>Ascension Packages</h3>
+            <p>Explore the seventeen homebrew faction-agnostic ascension packages, with the aim of being suitable for any type of campaign, from Imperium to Xeno to Chaos.</p>
+            <Link to="/ascensions" className="link-blue">
+              Explore →
+            </Link>
+          </div>
+
+          <div className="feature-card">
             <h3>Abilities</h3>
             <p>(Coming soon) Discover Psyker powers, Faith abilities, and faction-specific boons.</p>
             <span className="coming-soon">Coming Soon</span>

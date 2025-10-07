@@ -70,11 +70,16 @@ function Characters() {
       });
 
       if (res.ok) {
-        setCharacters((prev) =>
-          prev.map((c) =>
-            c.id === selectedChar.id ? { ...c, iconhtml: newImageUrl } : c
-          )
+        // Immediately fetch updated character to refresh joined fields
+        const refreshedRes = await fetch(
+          `${API_URL}api/characters/${selectedChar.id}`
         );
+        const refreshed = await refreshedRes.json();
+
+        setCharacters((prev) =>
+          prev.map((c) => (c.id === refreshed.id ? refreshed : c))
+        );
+
         handleCloseUploader();
       }
     } catch (err) {
@@ -116,10 +121,16 @@ function Characters() {
       });
 
       if (res.ok) {
-        const updated = await res.json();
-        setCharacters((prev) =>
-          prev.map((c) => (c.id === updated.id ? updated : c))
+        // Fetch the full updated character with joined info
+        const refreshedRes = await fetch(
+          `${API_URL}api/characters/${selectedChar.id}`
         );
+        const refreshed = await refreshedRes.json();
+
+        setCharacters((prev) =>
+          prev.map((c) => (c.id === refreshed.id ? refreshed : c))
+        );
+
         handleCloseEditor();
       }
     } catch (err) {
@@ -234,79 +245,133 @@ function Characters() {
       {/* --- Character Edit Modal --- */}
       {showEditor && selectedChar && (
         <div className="modal-overlay">
-          <div className="modal-content">
-            <h2>Edit Character: {selectedChar.name}</h2>
-
-            <label>Name:</label>
-            <input
-              type="text"
-              className="modern-input"
-              value={editData.name}
-              onChange={(e) => setEditData({ ...editData, name: e.target.value })}
-            />
-
-            <label>Description:</label>
-            <textarea
-              className="modern-input"
-              rows="3"
-              value={editData.description}
-              onChange={(e) =>
-                setEditData({ ...editData, description: e.target.value })
-              }
-            />
-
-            <label>Importance:</label>
-            <select
-              className="modern-input"
-              value={editData.characterImportance}
-              onChange={(e) =>
-                setEditData({ ...editData, characterImportance: e.target.value })
-              }
+          <div
+            className="modal-content"
+            style={{
+              background: "linear-gradient(180deg, #1b1b1b 0%, #121212 100%)",
+              border: "1px solid #2b2b2b",
+              boxShadow: "0 0 15px rgba(0, 210, 255, 0.2)",
+              color: "#fff",
+              padding: "2rem",
+              borderRadius: "12px",
+              maxWidth: "640px",
+              width: "90%",
+              fontFamily: "Roboto, sans-serif",
+            }}
+          >
+            <h2
+              style={{
+                textAlign: "center",
+                color: "#00d2ff",
+                marginBottom: "1.5rem",
+                letterSpacing: "0.5px",
+              }}
             >
-              <option value="">Select importance</option>
-              {importanceOptions.map((opt) => (
-                <option key={opt.id} value={opt.id}>
-                  {opt.importance}
-                </option>
-              ))}
-            </select>
+              Edit Character: {selectedChar.name}
+            </h2>
 
-            <label>Status:</label>
-            <select
-              className="modern-input"
-              value={editData.status}
-              onChange={(e) =>
-                setEditData({ ...editData, status: e.target.value })
-              }
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: "1rem",
+              }}
             >
-              <option value="">Select status</option>
-              {statusOptions.map((opt) => (
-                <option key={opt.id} value={opt.id}>
-                  {opt.status}
-                </option>
-              ))}
-            </select>
+              <label style={{ color: "#9fd3ff", fontWeight: "600" }}>Name</label>
+              <input
+                type="text"
+                className="modern-input"
+                value={editData.name}
+                onChange={(e) => setEditData({ ...editData, name: e.target.value })}
+              />
 
-            <label>Cause of Death:</label>
-            <input
-              type="text"
-              className="modern-input"
-              value={editData.causeOfDeath}
-              onChange={(e) =>
-                setEditData({ ...editData, causeOfDeath: e.target.value })
-              }
-            />
+              <label style={{ color: "#9fd3ff", fontWeight: "600" }}>Description</label>
+              <textarea
+                className="modern-input"
+                rows="3"
+                value={editData.description}
+                onChange={(e) =>
+                  setEditData({ ...editData, description: e.target.value })
+                }
+                style={{ resize: "vertical" }}
+              />
 
-            <div style={{ display: "flex", justifyContent: "center", gap: "1rem", marginTop: "1rem" }}>
-              <button className="modern-btn" onClick={handleSaveCharacter}>
+              <label style={{ color: "#9fd3ff", fontWeight: "600" }}>
+                Importance
+              </label>
+              <select
+                className="modern-input"
+                value={editData.characterImportance}
+                onChange={(e) =>
+                  setEditData({ ...editData, characterImportance: e.target.value })
+                }
+              >
+                <option value="">Select importance</option>
+                {importanceOptions.map((opt) => (
+                  <option key={opt.id} value={opt.id}>
+                    {opt.importance}
+                  </option>
+                ))}
+              </select>
+
+              <label style={{ color: "#9fd3ff", fontWeight: "600" }}>Status</label>
+              <select
+                className="modern-input"
+                value={editData.status}
+                onChange={(e) =>
+                  setEditData({ ...editData, status: e.target.value })
+                }
+              >
+                <option value="">Select status</option>
+                {statusOptions.map((opt) => (
+                  <option key={opt.id} value={opt.id}>
+                    {opt.status}
+                  </option>
+                ))}
+              </select>
+
+              <label style={{ color: "#9fd3ff", fontWeight: "600" }}>
+                Cause of Death
+              </label>
+              <input
+                type="text"
+                className="modern-input"
+                value={editData.causeOfDeath}
+                onChange={(e) =>
+                  setEditData({ ...editData, causeOfDeath: e.target.value })
+                }
+              />
+            </div>
+
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "center",
+                gap: "1.5rem",
+                marginTop: "2rem",
+              }}
+            >
+              <button
+                className="modern-btn"
+                onClick={handleSaveCharacter}
+                style={{
+                  background: "linear-gradient(90deg, #1e90ff, #00d2ff)",
+                  fontWeight: "600",
+                  boxShadow: "0 0 12px rgba(0, 210, 255, 0.3)",
+                  padding: "0.75rem 2rem",
+                }}
+              >
                 Save
               </button>
               <button
                 className="modern-btn"
+                onClick={handleCloseEditor}
                 style={{
                   background: "linear-gradient(90deg, #cc0000, #880000)",
+                  fontWeight: "600",
+                  padding: "0.75rem 2rem",
+                  boxShadow: "0 0 10px rgba(255, 0, 0, 0.2)",
                 }}
-                onClick={handleCloseEditor}
               >
                 Cancel
               </button>
