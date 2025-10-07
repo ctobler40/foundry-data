@@ -35,11 +35,7 @@ import CriticalComps from "./pages/combat/CriticalComps";
 import EnvironmentHazards from "./pages/combat/EnvironmentHazards";
 
 // ----- FAFO Character Pages -----
-import Hrellik from "./pages/fafo/Hrellik";
-import Kaleson from "./pages/fafo/Kaleson";
-import Agnes from "./pages/fafo/Agnes";
-import Joe from "./pages/fafo/Joe";
-import Dahlia from "./pages/fafo/Dahlia";
+import FAFO from "./pages/FAFO";
 
 const API_URL = process.env.REACT_APP_API_URL || "http://localhost:6500/";
 
@@ -137,11 +133,7 @@ function App() {
             <Route path="/combat/environmental-hazards" element={<EnvironmentHazards />} />
 
             {/* ----- FAFO Main Characters ----- */}
-            <Route path="/fafo/hrellik" element={<Hrellik />} />
-            <Route path="/fafo/kaleson" element={<Kaleson />} />
-            <Route path="/fafo/agnes" element={<Agnes />} />
-            <Route path="/fafo/joe" element={<Joe />} />
-            <Route path="/fafo/dahlia" element={<Dahlia />} />
+            <Route path="/fafo/:name" element={<FAFO />} />
 
             {/* ----- Search / Redirect ----- */}
             <Route path="/search" element={<Search />} />

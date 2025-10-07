@@ -3,6 +3,39 @@ import { Link } from "react-router-dom";
 function Campaign({ campaign, planets }) {
   if (!campaign) return <p>Loading campaign...</p>;
 
+  const fafoMembers = [
+    {
+      name: "Hrellik Orchik",
+      img: "/images/kroot.png",
+      desc: "A Kroot mercenary torn between primal instinct and flashes of Tau logic, wandering Nikonova in search of purpose.",
+      path: "/fafo/hrellik",
+    },
+    {
+      name: "Kaleson Van Der Hildr",
+      img: "/images/kaleson.png",
+      desc: "A loudmouthed scribe from the Wieder Imperium whose charm and ego often land the party in chaos.",
+      path: "/fafo/kaleson",
+    },
+    {
+      name: "Agnes Grimm",
+      img: "/images/agnes.png",
+      desc: "A stealthy rebel teaching Je’lichi techniques, quick with her wit and slower to trust.",
+      path: "/fafo/agnes",
+    },
+    {
+      name: "Dahlia Garakis",
+      img: "/images/dahlia.png",
+      desc: "A hard-drinking fighter from the Renegade House whose humor masks deep scars.",
+      path: "/fafo/dahlia",
+    },
+    {
+      name: "Sgt. Joe Graves",
+      img: "/images/joe.png",
+      desc: "A Sordin PDF trooper driven by duty and guilt, last seen missing in the chaos of Nikonova.",
+      path: "/fafo/joe",
+    },
+  ];
+
   return (
     <div className="campaign-page" style={{ textAlign: "center", color: "#fff" }}>
       {/* -------------------- OVERVIEW SECTION -------------------- */}
@@ -30,58 +63,52 @@ function Campaign({ campaign, planets }) {
             marginTop: "1rem",
           }}
         >
-          {[
-            {
-              name: "Hrellik Orchik",
-              img: "/images/kroot.png",
-              desc: "A Kroot mercenary torn between primal instinct and flashes of Tau logic, wandering Nikonova in search of purpose.",
-            },
-            {
-              name: "Kaleson Van Der Hildr",
-              img: "/images/kaleson.png",
-              desc: "A loudmouthed scribe from the Wieder Imperium whose charm and ego often land the party in chaos.",
-            },
-            {
-              name: "Agnes Grimm",
-              img: "/images/agnes.png",
-              desc: "A stealthy rebel teaching Je’lichi techniques, quick with her wit and slower to trust.",
-            },
-            {
-              name: "Dahlia Garakis",
-              img: "/images/dahlia.png",
-              desc: "A hard-drinking fighter from the Renegade House whose humor masks deep scars.",
-            },
-            {
-              name: "Sgt. Joe Graves",
-              img: "/images/joe.png",
-              desc: "A Sordin PDF trooper driven by duty and guilt, last seen missing in the chaos of Nikonova.",
-            },
-          ].map((char) => (
-            <div
+          {fafoMembers.map((char) => (
+            <Link
               key={char.name}
-              className="feature-card"
+              to={char.path}
               style={{
-                background: "#1e1e1e",
-                borderRadius: "12px",
-                padding: "1rem",
-                boxShadow: "0 0 10px rgba(0, 0, 255, 0.2)",
+                textDecoration: "none",
+                color: "inherit",
+                transition: "transform 0.25s ease, box-shadow 0.25s ease",
               }}
             >
-              <img
-                src={char.img}
-                alt={char.name}
-                className="character-image"
+              <div
+                className="feature-card"
                 style={{
-                  width: "120px",
-                  height: "120px",
-                  borderRadius: "50%",
-                  objectFit: "cover",
-                  marginBottom: "0.5rem",
+                  background: "#1e1e1e",
+                  borderRadius: "12px",
+                  padding: "1rem",
+                  boxShadow: "0 0 10px rgba(0, 0, 255, 0.2)",
+                  transition: "all 0.25s ease",
+                  cursor: "pointer",
                 }}
-              />
-              <h3 style={{ color: "#4da6ff" }}>{char.name}</h3>
-              <p>{char.desc}</p>
-            </div>
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = "translateY(-5px)";
+                  e.currentTarget.style.boxShadow = "0 0 15px rgba(77,166,255,0.4)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = "translateY(0)";
+                  e.currentTarget.style.boxShadow = "0 0 10px rgba(0,0,255,0.2)";
+                }}
+              >
+                <img
+                  src={char.img}
+                  alt={char.name}
+                  className="character-image"
+                  style={{
+                    width: "120px",
+                    height: "120px",
+                    borderRadius: "50%",
+                    objectFit: "cover",
+                    marginBottom: "0.5rem",
+                    boxShadow: "0 0 8px rgba(0,210,255,0.3)",
+                  }}
+                />
+                <h3 style={{ color: "#4da6ff" }}>{char.name}</h3>
+                <p>{char.desc}</p>
+              </div>
+            </Link>
           ))}
         </div>
 
