@@ -5,7 +5,7 @@ export const SEARCH_ENDPOINTS = [
   { name: "Talents", url: `${API_URL}api/talents`, path: "/talents" },
   { name: "Characters", url: `${API_URL}api/characters`, path: "/characters" },
   { name: "Regroup Actions", url: `${API_URL}api/regroupActions`, path: "/regroup-actions" },
-  { name: "Ascension Packages", url: `${API_URL}api/ascensionPackages`, path: "/ascensions`" },
+  { name: "Ascension Packages", url: `${API_URL}api/ascensionPackages`, path: "/ascensions" },
 
   // ----- Campaign Overview -----
   {
@@ -14,8 +14,6 @@ export const SEARCH_ENDPOINTS = [
     path: "/campaign",
     note: "General overview of the Chalnath Expanse campaign.",
   },
-
-  // ----- Campaign Subdata (no standalone pages) -----
   {
     name: "Factions",
     url: `${API_URL}api/campaign/factions`,
@@ -28,8 +26,6 @@ export const SEARCH_ENDPOINTS = [
     path: "/campaign",
     note: "Appears as part of the campaign overview.",
   },
-
-  // ----- Chalnath Expanse Planets -----
   {
     name: "Planets",
     url: `${API_URL}api/campaign/planets`,
@@ -42,8 +38,6 @@ export const SEARCH_ENDPOINTS = [
     path: "/campaign/kalidonia",
     note: "Planet-specific location page.",
   },
-
-  // ----- Chalnath Locations Index -----
   {
     name: "Chalnath Locations",
     url: `${API_URL}api/campaign/planets`,
@@ -107,5 +101,39 @@ export const SEARCH_ENDPOINTS = [
     url: `${API_URL}api/environmentalHazards`,
     path: "/combat/environmental-hazards",
     note: "Hazardous battlefield conditions and terrain effects.",
+  },
+
+  // =====================================================================
+  // 🌌 FAFO MAIN CHARACTERS
+  // =====================================================================
+  {
+    name: "FAFO - Hrellik Orchik",
+    url: `${API_URL}api/mainCharacters`,
+    path: "/fafo/hrellik",
+    note: "The lone Kroot wanderer of Nikonova’s undercity.",
+  },
+  {
+    name: "FAFO - Kaleson Van Der Hildr",
+    url: `${API_URL}api/mainCharacters`,
+    path: "/fafo/kaleson",
+    note: "Veteran commander and strategist of the FAFO unit.",
+  },
+  {
+    name: "FAFO - Agnes Grimm",
+    url: `${API_URL}api/mainCharacters`,
+    path: "/fafo/agnes",
+    note: "The medic who defies orders to save lives.",
+  },
+  {
+    name: "FAFO - Joe Graves",
+    url: `${API_URL}api/mainCharacters`,
+    path: "/fafo/joe",
+    note: "The reluctant soldier with a broken faith in command.",
+  },
+  {
+    name: "FAFO - Dahlia Garakis",
+    url: `${API_URL}api/mainCharacters`,
+    path: "/fafo/dahlia",
+    note: "A faith-driven zealot scarred by divine fire.",
   },
 ];

@@ -841,3 +841,131 @@ body,
   color: #bbb;
   font-size: 0.95rem;
 }
+
+/* ---------- MAIN CHARACTER PROFILE ---------- */
+.profile-page {
+  background-color: #121212;
+  color: #fff;
+  padding: 2.5rem 1.5rem;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  animation: fadeIn 0.6s ease;
+}
+
+.profile-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.profile-title {
+  font-size: 2.6rem;
+  color: #00d2ff;
+  font-weight: 700;
+  margin-bottom: 0.4rem;
+}
+
+.profile-subtitle {
+  color: #9fd3ff;
+  font-size: 1.1rem;
+  letter-spacing: 0.5px;
+}
+
+.profile-photo {
+  width: 260px;
+  height: 260px;
+  border-radius: 50%;
+  object-fit: cover;
+  box-shadow: 0 0 25px rgba(0, 210, 255, 0.35);
+  margin-bottom: 2rem;
+  transition: transform 0.3s ease;
+}
+
+.profile-photo:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 40px rgba(0, 210, 255, 0.6);
+}
+
+.profile-content {
+  max-width: 800px;
+  background-color: #1a1a1a;
+  border-radius: 12px;
+  padding: 2rem;
+  border: 1px solid #222;
+  box-shadow: 0 0 15px rgba(0, 210, 255, 0.08);
+}
+
+.profile-section {
+  margin-bottom: 2rem;
+  text-align: left;
+}
+
+.profile-section h2 {
+  color: #3a7bd5;
+  margin-bottom: 0.6rem;
+  font-size: 1.4rem;
+  border-bottom: 1px solid #222;
+  padding-bottom: 0.3rem;
+}
+
+.profile-section p {
+  color: #ccc;
+  line-height: 1.6;
+  font-size: 1rem;
+}
+
+/* Quote and moment lists */
+.quote-list,
+.moment-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.quote-item {
+  background: #1f1f1f;
+  border-left: 3px solid #00d2ff;
+  padding: 0.9rem 1.2rem;
+  border-radius: 6px;
+  color: #aeeaff;
+  font-style: italic;
+  margin-bottom: 0.8rem;
+  transition: background 0.2s;
+}
+
+.quote-item:hover {
+  background: #222;
+}
+
+.moment-item {
+  background: #1f1f1f;
+  border-left: 3px solid #3a7bd5;
+  padding: 0.9rem 1.2rem;
+  border-radius: 6px;
+  color: #ddd;
+  margin-bottom: 0.8rem;
+  transition: background 0.2s;
+}
+
+.moment-item:hover {
+  background: #242424;
+}
+
+/* Loading & error states */
+.character-loading,
+.character-error {
+  text-align: center;
+  color: #00d2ff;
+  font-size: 1.2rem;
+  margin-top: 5rem;
+}
+
+.character-error {
+  color: #ff6b6b;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(15px); }
+  to { opacity: 1; transform: translateY(0); }
+}

@@ -34,6 +34,13 @@ import CriticalHits from "./pages/combat/CriticalHits";
 import CriticalComps from "./pages/combat/CriticalComps";
 import EnvironmentHazards from "./pages/combat/EnvironmentHazards";
 
+// ----- FAFO Character Pages -----
+import Hrellik from "./pages/fafo/Hrellik";
+import Kaleson from "./pages/fafo/Kaleson";
+import Agnes from "./pages/fafo/Agnes";
+import Joe from "./pages/fafo/Joe";
+import Dahlia from "./pages/fafo/Dahlia";
+
 const API_URL = process.env.REACT_APP_API_URL || "http://localhost:6500/";
 
 function App() {
@@ -44,6 +51,7 @@ function App() {
   const [planets, setPlanets] = useState([]);
   const [groups, setGroups] = useState([]);
 
+  // Load Talents
   useEffect(() => {
     fetch(`${API_URL}api/talents`)
       .then((res) => res.json())
@@ -54,6 +62,7 @@ function App() {
       .catch(() => setTalents([]));
   }, []);
 
+  // Load Characters
   useEffect(() => {
     fetch(`${API_URL}api/characters`)
       .then((res) => res.json())
@@ -64,6 +73,7 @@ function App() {
       .catch(() => setCharacters([]));
   }, []);
 
+  // Load Campaign Data
   useEffect(() => {
     async function loadCampaignData() {
       try {
@@ -90,11 +100,13 @@ function App() {
         <Navbar />
         <main style={{ padding: "1rem" }}>
           <Routes>
+            {/* ----- Core Pages ----- */}
             <Route path="/" element={<Home />} />
             <Route path="/talents" element={<Talents talents={talents} />} />
             <Route path="/talent/:id" element={<Talent talents={talents} />} />
             <Route path="/characters" element={<Characters characters={characters} />} />
 
+            {/* ----- Campaign ----- */}
             <Route
               path="/campaign"
               element={
@@ -108,6 +120,7 @@ function App() {
             />
             <Route path="/campaign/kalidonia" element={<Kalidonia />} />
 
+            {/* ----- Archives & Reference Pages ----- */}
             <Route path="/archives" element={<Archives />} />
             <Route path="/regroup-actions" element={<RegroupActions />} />
             <Route path="/ascensions" element={<Ascensions />} />
@@ -123,6 +136,14 @@ function App() {
             <Route path="/combat/complications" element={<CriticalComps />} />
             <Route path="/combat/environmental-hazards" element={<EnvironmentHazards />} />
 
+            {/* ----- FAFO Main Characters ----- */}
+            <Route path="/fafo/hrellik" element={<Hrellik />} />
+            <Route path="/fafo/kaleson" element={<Kaleson />} />
+            <Route path="/fafo/agnes" element={<Agnes />} />
+            <Route path="/fafo/joe" element={<Joe />} />
+            <Route path="/fafo/dahlia" element={<Dahlia />} />
+
+            {/* ----- Search / Redirect ----- */}
             <Route path="/search" element={<Search />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
