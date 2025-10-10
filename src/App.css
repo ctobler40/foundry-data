@@ -1053,3 +1053,14 @@ textarea.modern-input:focus {
 .modal-content h3 {
   color: #00d2ff;
 }
+
+.pdf-link {
+  color: #4ea1ff;
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.pdf-link:hover {
+  text-decoration: underline;
+  color: #7cc0ff;
+}

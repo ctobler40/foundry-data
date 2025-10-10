@@ -219,3 +219,14 @@ CREATE TABLE combat_complications (
     test_required TEXT,
     dn_example VARCHAR(20)
 );
+
+CREATE TABLE species (
+  id SERIAL PRIMARY KEY,
+  name VARCHAR(100),
+  xp_cost INT,
+  speed INT,
+  attributes TEXT,
+  skills TEXT,
+  abilities TEXT,
+  keywords TEXT
+);

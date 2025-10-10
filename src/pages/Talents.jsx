@@ -28,6 +28,38 @@ export default function Talents({ talents }) {
     return sorted;
   }, [talents, search, sortKey, sortOrder]);
 
+  const getPdfName = (sourcePage) => {
+    // Map of short source labels to actual PDF filenames
+    const map = {
+      "Core": "CB72600_WG_Corebook_Ver_3.pdf",
+      "Apocrypha": "Wrath & Glory - An Abundance of Apocrypha v9 - Copy.pdf",
+      "Ascension": "AscensionCompendiumv1.pdf",
+      "Regroup": "Apocryphal Appendices - Regroup Actions v1 (3).pdf",
+      "Combat": "Combat Quick Reference.pdf",
+      "Campaign": "Chalnath Expanse Campaign.pdf",
+      "Redacted Records": "WG_Redacted_Records_II_230720.pdf"
+    };
+
+    // Determine which PDF name to use
+    let pdfFile = "CB72600_WG_Corebook_Ver_3.pdf"; // default
+    for (const key in map) {
+      if (sourcePage.toLowerCase().includes(key.toLowerCase())) {
+        pdfFile = map[key];
+        break;
+      }
+    }
+
+    // Extract page number from something like "Core p.145" or "Apocrypha 27"
+    const match = sourcePage.match(/(\d+)/);
+    const pageNumber = match ? parseInt(match[1], 10) : null;
+
+    // Build URL for the PDF file in /public/reference
+    let url = `/reference/${pdfFile}`;
+    if (pageNumber) url += `#page=${pageNumber}`;
+
+    return url;
+  };
+
   const handleSort = (key) => {
     if (sortKey === key) {
       setSortOrder(sortOrder === "asc" ? "desc" : "asc");
@@ -82,6 +114,10 @@ export default function Talents({ talents }) {
                   {sortKey === "requirements" && (sortOrder === "asc" ? "▲" : "▼")}
                 </th>
                 <th>Effect</th>
+                <th onClick={() => handleSort("source_page")}>
+                  Source{" "}
+                  {sortKey === "source_page" && (sortOrder === "asc" ? "▲" : "▼")}
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -98,6 +134,21 @@ export default function Talents({ talents }) {
                     {talent.effect?.length > 80
                       ? talent.effect.substring(0, 80) + "..."
                       : talent.effect}
+                  </td>
+                  <td>
+                    {talent.source_page ? (
+                      <a
+                        href={getPdfName(talent.source_page)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="pdf-link"
+                        onClick={(e) => e.stopPropagation()} // prevent modal trigger
+                      >
+                        {talent.source_page}
+                      </a>
+                    ) : (
+                      "—"
+                    )}
                   </td>
                 </tr>
               ))}
