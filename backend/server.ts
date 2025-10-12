@@ -1457,6 +1457,78 @@ app.delete("/api/mainCharacters/:id", async (req: Request, res: Response) => {
   }
 });
 
+// ============================================================================
+// BLESSINGS ROUTES
+// ============================================================================
+app.get("/api/blessings", async (req: Request, res: Response) => {
+  try {
+    const { rows } = await db.query("SELECT * FROM blessings ORDER BY id ASC");
+    res.json(rows);
+  } catch (err) {
+    console.error("Error fetching blessings:", err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+app.get("/api/blessings/:id", async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { rows } = await db.query("SELECT * FROM blessings WHERE id = $1", [id]);
+    if (rows.length === 0)
+      return res.status(404).json({ error: "Blessing not found" });
+    res.json(rows[0]);
+  } catch (err) {
+    console.error("Error fetching blessing:", err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+app.post("/api/blessings", async (req: Request, res: Response) => {
+  try {
+    const { name, description, examples, effects, source_page, source_file } = req.body;
+    const { rows } = await db.query(
+      `INSERT INTO blessings (name, description, examples, effects, source_page, source_file)
+       VALUES ($1, $2, $3, $4, $5, $6)
+       RETURNING *`,
+      [name, description, examples || [], effects || [], source_page, source_file || "AscensionCompendiumv1"]
+    );
+    res.status(201).json(rows[0]);
+  } catch (err) {
+    console.error("Error creating blessing:", err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+app.put("/api/blessings/:id", async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { name, description, examples, effects, source_page, source_file } = req.body;
+    const { rows } = await db.query(
+      `UPDATE blessings
+       SET name = $1, description = $2, examples = $3, effects = $4, source_page = $5, source_file = $6
+       WHERE id = $7
+       RETURNING *`,
+      [name, description, examples || [], effects || [], source_page, source_file, id]
+    );
+    if (rows.length === 0)
+      return res.status(404).json({ error: "Blessing not found" });
+    res.json(rows[0]);
+  } catch (err) {
+    console.error("Error updating blessing:", err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+app.delete("/api/blessings/:id", async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    await db.query("DELETE FROM blessings WHERE id = $1", [id]);
+    res.json({ message: "Blessing deleted" });
+  } catch (err) {
+    console.error("Error deleting blessing:", err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
 // ----------------------------------------
 // 🚀 Server Start
 // ----------------------------------------

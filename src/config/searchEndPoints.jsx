@@ -38,12 +38,6 @@ export const SEARCH_ENDPOINTS = [
     path: "/campaign/kalidonia",
     note: "Planet-specific location page.",
   },
-  {
-    name: "Chalnath Locations",
-    url: `${API_URL}api/campaign/planets`,
-    path: "/chalnath-locations",
-    note: "Hub for discovered planetary locations.",
-  },
 
   // =====================================================================
   // ⚔️ Combat Reference System
@@ -104,36 +98,36 @@ export const SEARCH_ENDPOINTS = [
   },
 
   // =====================================================================
-  // 🌌 FAFO MAIN CHARACTERS
+  // 🌌 FAFO MAIN CHARACTERS (Individual Routes)
   // =====================================================================
   {
-    name: "FAFO - Hrellik Orchik",
-    url: `${API_URL}api/mainCharacters`,
-    path: "/fafo/hrellik",
+    name: "Hrellik Orchik",
+    url: `${API_URL}api/mainCharacters/1`,
+    path: "/characters/hrellik",
     note: "The lone Kroot wanderer of Nikonova’s undercity.",
   },
   {
-    name: "FAFO - Kaleson Van Der Hildr",
-    url: `${API_URL}api/mainCharacters`,
-    path: "/fafo/kaleson",
+    name: "Kaleson Van Der Hildr",
+    url: `${API_URL}api/mainCharacters/2`,
+    path: "/characters/kaleson",
     note: "Veteran commander and strategist of the FAFO unit.",
   },
   {
-    name: "FAFO - Agnes Grimm",
-    url: `${API_URL}api/mainCharacters`,
-    path: "/fafo/agnes",
+    name: "Agnes Grimm",
+    url: `${API_URL}api/mainCharacters/3`,
+    path: "/characters/agnes",
     note: "The medic who defies orders to save lives.",
   },
   {
-    name: "FAFO - Joe Graves",
-    url: `${API_URL}api/mainCharacters`,
-    path: "/fafo/joe",
+    name: "Joe Graves",
+    url: `${API_URL}api/mainCharacters/4`,
+    path: "/characters/joe",
     note: "The reluctant soldier with a broken faith in command.",
   },
   {
-    name: "FAFO - Dahlia Garakis",
-    url: `${API_URL}api/mainCharacters`,
-    path: "/fafo/dahlia",
+    name: "Dahlia Garakis",
+    url: `${API_URL}api/mainCharacters/5`,
+    path: "/characters/dahlia",
     note: "A faith-driven zealot scarred by divine fire.",
   },
 ];

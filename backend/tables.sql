@@ -230,3 +230,13 @@ CREATE TABLE species (
   abilities TEXT,
   keywords TEXT
 );
+
+CREATE TABLE blessings (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(150) NOT NULL,
+    description TEXT,
+    examples TEXT[],       
+    effects TEXT[],      
+    source_page INT,
+    source_file VARCHAR(150) DEFAULT 'AscensionCompendiumv1'
+);

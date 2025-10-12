@@ -1064,3 +1064,30 @@ textarea.modern-input:focus {
   text-decoration: underline;
   color: #7cc0ff;
 }
+
+/* ---------- CHARACTER PROFILE GRID ---------- */
+.profile-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+  gap: 2rem;
+  justify-content: center;
+  align-items: start;
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto 2rem auto;
+}
+
+.profile-section {
+  background: #1a1a1a;
+  border: 1px solid #222;
+  border-radius: 10px;
+  padding: 1.5rem;
+  text-align: left;
+  box-shadow: 0 0 10px rgba(0, 210, 255, 0.1);
+  transition: all 0.3s ease;
+}
+
+.profile-section:hover {
+  border-color: #3a7bd5;
+  box-shadow: 0 0 15px rgba(0, 210, 255, 0.3);
+}

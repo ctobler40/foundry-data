@@ -4,6 +4,7 @@ import {
   Routes,
   Route,
   Navigate,
+  useParams,
 } from "react-router-dom";
 import "./App.css";
 
@@ -35,9 +36,38 @@ import CriticalComps from "./pages/combat/CriticalComps";
 import EnvironmentHazards from "./pages/combat/EnvironmentHazards";
 
 // ----- FAFO Character Pages -----
-import FAFO from "./pages/FAFO";
+import Hrellik from "./pages/characters/Hrellik";
+import Kaleson from "./pages/characters/Kaleson";
+import Agnes from "./pages/characters/Agnes";
+import Joe from "./pages/characters/Joe";
+import Dahlia from "./pages/characters/Dahlia";
 
 const API_URL = process.env.REACT_APP_API_URL || "http://localhost:6500/";
+
+// ----- Character Router Wrapper -----
+function FAFOCharacterRouter() {
+  const { name } = useParams();
+  const lower = name?.toLowerCase();
+
+  switch (lower) {
+    case "hrellik":
+      return <Hrellik />;
+    case "kaleson":
+      return <Kaleson />;
+    case "agnes":
+      return <Agnes />;
+    case "joe":
+      return <Joe />;
+    case "dahlia":
+      return <Dahlia />;
+    default:
+      return (
+        <div style={{ textAlign: "center", padding: "2rem", color: "#aaa" }}>
+          Character not found.
+        </div>
+      );
+  }
+}
 
 function App() {
   const [talents, setTalents] = useState([]);
@@ -132,8 +162,8 @@ function App() {
             <Route path="/combat/complications" element={<CriticalComps />} />
             <Route path="/combat/environmental-hazards" element={<EnvironmentHazards />} />
 
-            {/* ----- FAFO Main Characters ----- */}
-            <Route path="/fafo/:name" element={<FAFO />} />
+            {/* ----- FAFO Main Characters (Keep Original Route) ----- */}
+            <Route path="/fafo/:name" element={<FAFOCharacterRouter />} />
 
             {/* ----- Search / Redirect ----- */}
             <Route path="/search" element={<Search />} />
