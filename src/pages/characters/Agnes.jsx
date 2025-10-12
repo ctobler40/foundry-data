@@ -28,10 +28,10 @@ export default function Agnes() {
       <CharacterProfile id={3} subtitle="The medic who defies orders to save lives." />
 
       <div className="resources-section" style={{ marginTop: "3rem" }}>
-        <h2 style={{ textAlign: "center", color: "#ffb347" }}>Helpful Resources</h2>
-        <p style={{ textAlign: "center", marginBottom: "1rem", color: "#bbb" }}>
+        <h2 style={{ textAlign: "center", color: "#ffb347" }}>Blessings</h2>
+        {/* <p style={{ textAlign: "center", marginBottom: "1rem", color: "#bbb" }}>
           Collected prayers and blessings known to guide the faithful through crisis.
-        </p>
+        </p> */}
 
         {loading ? (
           <p style={{ textAlign: "center", color: "#888" }}>Loading blessings...</p>
