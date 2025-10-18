@@ -240,3 +240,14 @@ CREATE TABLE blessings (
     source_page INT,
     source_file VARCHAR(150) DEFAULT 'AscensionCompendiumv1'
 );
+
+CREATE TABLE timeline_events (
+    id SERIAL PRIMARY KEY,
+    title TEXT NOT NULL,
+    description TEXT,
+    event_date DATE,
+    related_character INTEGER REFERENCES characters(id) ON DELETE SET NULL,
+    related_campaign INTEGER REFERENCES campaign(id) ON DELETE SET NULL,
+    source_file VARCHAR(150) DEFAULT 'Custom',
+    created_at TIMESTAMP DEFAULT NOW()
+);

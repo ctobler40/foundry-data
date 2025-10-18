@@ -28,6 +28,10 @@ function Navbar() {
           Archives
         </Link>
 
+        <Link to="/timeline" className="navbar-subtitle">
+          Timeline
+        </Link>
+
         <form onSubmit={handleSearch} className="navbar-search">
           <input
             type="text"

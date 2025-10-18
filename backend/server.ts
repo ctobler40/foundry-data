@@ -1529,6 +1529,88 @@ app.delete("/api/blessings/:id", async (req: Request, res: Response) => {
     res.status(500).json({ error: "Internal Server Error" });
   }
 });
+
+// ============================================================================
+// TIMELINE ROUTES
+// ============================================================================
+app.get("/api/timeline", async (req: Request, res: Response) => {
+  try {
+    const { rows } = await db.query(`
+      SELECT t.*, c.name AS character_name, ca.title AS campaign_title
+      FROM timeline_events t
+      LEFT JOIN characters c ON t.related_character = c.id
+      LEFT JOIN campaign ca ON t.related_campaign = ca.id
+      ORDER BY event_date ASC, id ASC;
+    `);
+    res.json(rows);
+  } catch (err) {
+    console.error("Error fetching timeline events:", err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+app.get("/api/timeline/:id", async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { rows } = await db.query("SELECT * FROM timeline_events WHERE id = $1", [id]);
+    if (rows.length === 0) return res.status(404).json({ error: "Event not found" });
+    res.json(rows[0]);
+  } catch (err) {
+    console.error("Error fetching event:", err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+app.post("/api/timeline", async (req: Request, res: Response) => {
+  try {
+    const { title, description, event_date, related_character, related_campaign, source_file } =
+      req.body;
+    const { rows } = await db.query(
+      `INSERT INTO timeline_events 
+       (title, description, event_date, related_character, related_campaign, source_file)
+       VALUES ($1,$2,$3,$4,$5,$6)
+       RETURNING *`,
+      [title, description, event_date, related_character, related_campaign, source_file || "Custom"]
+    );
+    res.status(201).json(rows[0]);
+  } catch (err) {
+    console.error("Error creating event:", err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+app.put("/api/timeline/:id", async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { title, description, event_date, related_character, related_campaign, source_file } =
+      req.body;
+    const { rows } = await db.query(
+      `UPDATE timeline_events
+       SET title=$1, description=$2, event_date=$3, related_character=$4,
+           related_campaign=$5, source_file=$6
+       WHERE id=$7
+       RETURNING *`,
+      [title, description, event_date, related_character, related_campaign, source_file, id]
+    );
+    if (rows.length === 0) return res.status(404).json({ error: "Event not found" });
+    res.json(rows[0]);
+  } catch (err) {
+    console.error("Error updating event:", err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+app.delete("/api/timeline/:id", async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    await db.query("DELETE FROM timeline_events WHERE id = $1", [id]);
+    res.json({ message: "Event deleted" });
+  } catch (err) {
+    console.error("Error deleting event:", err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
 // ----------------------------------------
 // 🚀 Server Start
 // ----------------------------------------

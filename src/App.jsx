@@ -17,6 +17,7 @@ import Campaign from "./pages/Campaign";
 import RegroupActions from "./pages/RegroupActions";
 import Archives from "./pages/Archives";
 import Ascensions from "./pages/Ascensions";
+import Timeline from "./pages/Timeline";
 import Kalidonia from "./pages/ChalnathLocations/Kalidonia";
 
 // ----- Layout -----
@@ -147,6 +148,7 @@ function App() {
             <Route path="/campaign/kalidonia" element={<Kalidonia />} />
 
             {/* ----- Archives & Reference Pages ----- */}
+            <Route path="/timeline" element={<Timeline />} />
             <Route path="/archives" element={<Archives />} />
             <Route path="/regroup-actions" element={<RegroupActions />} />
             <Route path="/ascensions" element={<Ascensions />} />
