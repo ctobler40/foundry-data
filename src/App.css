@@ -1192,20 +1192,27 @@ textarea.modern-input:focus {
   position: absolute;
   background: #1e1e1e;
   color: #fff;
-  padding: 0.6rem 0.8rem;
+  padding: 0.8rem 1rem;
   border-radius: 8px;
-  top: -60px;
-  left: -80px;
-  width: 160px;
+  top: auto;
+  bottom: 140%;              /* Positions popup above the dot */
+  left: 50%;
+  transform: translateX(-50%);
+  min-width: 180px;
+  max-width: 240px;
   font-size: 0.85rem;
-  box-shadow: 0 0 10px rgba(0, 210, 255, 0.2);
-  transition: opacity 0.3s ease;
-  z-index: 10;
+  line-height: 1.4;
+  white-space: normal;       /* Wrap long lines properly */
+  word-wrap: break-word;
+  box-shadow: 0 0 12px rgba(0, 210, 255, 0.25);
+  transition: opacity 0.3s ease, transform 0.2s ease;
+  z-index: 110;
+  text-align: left;
 }
-
 .event-dot:hover .event-popup {
   visibility: visible;
   opacity: 1;
+  transform: translateX(-50%) translateY(-4px);
 }
 
 .no-events {
