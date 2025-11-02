@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 
 const API_URL = process.env.REACT_APP_API_URL || "http://localhost:6500/";
 
+// ---------- Helpers ----------
 function toImperialDate(date) {
   const d = new Date(date);
   if (isNaN(d)) return "";
@@ -24,10 +25,10 @@ function getEraLabel(imperialCode) {
   return "End of the 42nd Millennium";
 }
 
+// ---------- Main Component ----------
 export default function Timeline() {
   const [events, setEvents] = useState([]);
   const [selectedMillennium, setSelectedMillennium] = useState(42);
-  const [filteredEvents, setFilteredEvents] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [editingEvent, setEditingEvent] = useState(null);
   const [form, setForm] = useState({
@@ -40,7 +41,7 @@ export default function Timeline() {
     source_file: "Custom",
   });
 
-  // Fetch all events
+  // ------------------- FETCH -------------------
   useEffect(() => {
     const fetchEvents = async () => {
       try {
@@ -54,30 +55,9 @@ export default function Timeline() {
     fetchEvents();
   }, []);
 
-  // Filter and sort by millennium
-  useEffect(() => {
-    const millenniaEvents = events.filter(
-      (ev) =>
-        ev.millennium === selectedMillennium ||
-        (ev.imperial_code && ev.imperial_code.includes(`M${selectedMillennium}`))
-    );
-
-    millenniaEvents.sort((a, b) => {
-      const getFrac = (code) => {
-        if (!code) return 0;
-        const parts = code.split(".");
-        return parseInt(parts[1] || "0", 10);
-      };
-      return getFrac(a.imperial_code) - getFrac(b.imperial_code);
-    });
-
-    setFilteredEvents(millenniaEvents);
-  }, [selectedMillennium, events]);
-
   // ------------------- FORM LOGIC -------------------
   const toggleForm = (eventToEdit = null) => {
     if (eventToEdit) {
-      // Editing existing event
       setEditingEvent(eventToEdit);
       setForm({
         title: eventToEdit.title,
@@ -89,7 +69,6 @@ export default function Timeline() {
         source_file: eventToEdit.source_file || "Custom",
       });
     } else {
-      // Adding new event
       setEditingEvent(null);
       setForm({
         title: "",
@@ -121,14 +100,12 @@ export default function Timeline() {
 
     try {
       if (editingEvent) {
-        // PUT update
         await fetch(`${API_URL}api/timeline/${editingEvent.id}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
         });
       } else {
-        // POST new
         await fetch(`${API_URL}api/timeline`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -151,6 +128,31 @@ export default function Timeline() {
     setEditingEvent(null);
     setShowForm(false);
   };
+
+  // ------------------- GROUPING -------------------
+  const filteredEvents = events
+    .filter(
+      (ev) =>
+        ev.millennium === selectedMillennium ||
+        (ev.imperial_code && ev.imperial_code.includes(`M${selectedMillennium}`))
+    )
+    .sort((a, b) => {
+      const getFrac = (code) => {
+        if (!code) return 0;
+        const parts = code.split(".");
+        return parseInt(parts[1] || "0", 10);
+      };
+      return getFrac(a.imperial_code) - getFrac(b.imperial_code);
+    });
+
+  // Group events by Era Label
+  const groupedEvents = filteredEvents.reduce((acc, ev) => {
+    const imperial = ev.imperial_code || toImperialDate(ev.event_date);
+    const era = getEraLabel(imperial);
+    if (!acc[era]) acc[era] = [];
+    acc[era].push(ev);
+    return acc;
+  }, {});
 
   // ------------------- RENDER -------------------
   return (
@@ -199,7 +201,7 @@ export default function Timeline() {
             rows="3"
           />
           <input
-            type="text"
+            type="number"
             name="related_character"
             placeholder="Character ID (optional)"
             value={form.related_character}
@@ -207,7 +209,7 @@ export default function Timeline() {
             className="modern-input"
           />
           <input
-            type="text"
+            type="number"
             name="related_campaign"
             placeholder="Campaign ID (optional)"
             value={form.related_campaign}
@@ -245,54 +247,57 @@ export default function Timeline() {
         </div>
       </div>
 
-      {/* ---------- EVENT LIST ---------- */}
+      {/* ---------- EVENT GROUPS ---------- */}
       <div className="month-view">
         <h2 className="month-title">
           Records of the {selectedMillennium}th Millennium
         </h2>
 
-        {filteredEvents.length === 0 ? (
+        {Object.keys(groupedEvents).length === 0 ? (
           <p className="no-events">No recorded events in M{selectedMillennium}</p>
         ) : (
-          filteredEvents.map((ev, i) => {
-            const imperial = ev.imperial_code || toImperialDate(ev.event_date);
-            const era = getEraLabel(imperial);
-            return (
-              <div
-                key={ev.id}
-                className={`event-card fade-in ${i % 2 === 0 ? "alt" : ""}`}
-              >
-                <div className="event-header">
-                  <span className="imperial-badge">{imperial}</span>
-                  <span className="era-label">{era}</span>
-                </div>
-                <h3 className="event-title">{ev.title}</h3>
-                <p className="event-desc">
-                  {ev.description || "No description available."}
-                </p>
-                <div className="event-meta">
-                  {ev.character_name && (
-                    <p>
-                      <strong>Character:</strong> {ev.character_name}
-                    </p>
-                  )}
-                  {ev.campaign_title && (
-                    <p>
-                      <strong>Campaign:</strong> {ev.campaign_title}
-                    </p>
-                  )}
-                </div>
-                <div style={{ textAlign: "right", marginTop: "0.5rem" }}>
-                  <button
-                    onClick={() => toggleForm(ev)}
-                    className="modern-btn small-btn"
+          Object.entries(groupedEvents).map(([era, evList], eraIndex) => (
+            <div key={era} className="era-section fade-in">
+              <h3 className="era-heading">{era}</h3>
+              {evList.map((ev, i) => {
+                const imperial = ev.imperial_code || toImperialDate(ev.event_date);
+                return (
+                  <div
+                    key={ev.id}
+                    className={`event-card ${i % 2 === 0 ? "alt" : ""}`}
                   >
-                    Edit
-                  </button>
-                </div>
-              </div>
-            );
-          })
+                    <div className="event-header">
+                      <span className="imperial-badge">{imperial}</span>
+                    </div>
+                    <h4 className="event-title">{ev.title}</h4>
+                    <p className="event-desc">
+                      {ev.description || "No description available."}
+                    </p>
+                    <div className="event-meta">
+                      {ev.character_name && (
+                        <p>
+                          <strong>Character:</strong> {ev.character_name}
+                        </p>
+                      )}
+                      {ev.campaign_title && (
+                        <p>
+                          <strong>Campaign:</strong> {ev.campaign_title}
+                        </p>
+                      )}
+                    </div>
+                    <div style={{ textAlign: "right", marginTop: "0.5rem" }}>
+                      <button
+                        onClick={() => toggleForm(ev)}
+                        className="modern-btn small-btn"
+                      >
+                        Edit
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ))
         )}
       </div>
     </div>
