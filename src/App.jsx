@@ -18,7 +18,9 @@ import RegroupActions from "./pages/RegroupActions";
 import Archives from "./pages/Archives";
 import Ascensions from "./pages/Ascensions";
 import Timeline from "./pages/Timeline";
+
 import Kalidonia from "./pages/ChalnathLocations/Kalidonia";
+import Haephos from "./pages/ChalnathLocations/Haephos";
 
 // ----- Layout -----
 import Navbar from "./components/Navbar";
@@ -146,6 +148,7 @@ function App() {
               }
             />
             <Route path="/campaign/kalidonia" element={<Kalidonia />} />
+            <Route path="/campaign/haephos" element={<Haephos />} />
 
             {/* ----- Archives & Reference Pages ----- */}
             <Route path="/timeline" element={<Timeline />} />

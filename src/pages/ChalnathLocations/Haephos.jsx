@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 
 const API_URL = process.env.REACT_APP_API_URL || "http://localhost:6500/";
 
-export default function Kalidonia() {
+export default function Haephos() {
   const [campaign, setCampaign] = useState(null);
   const [planets, setPlanets] = useState([]);
   const [factions, setFactions] = useState([]);
@@ -31,9 +31,10 @@ export default function Kalidonia() {
     <div className="location-page" style={{ textAlign: "center", color: "#fff" }}>
       {/* -------------------- HEADER -------------------- */}
       <section className="hero-section">
-        <h1 className="hero-title">Kalidonia</h1>
+        <h1 className="hero-title">Haephos</h1>
         <p className="hero-subtitle">
-          Terra-like exoplanet located in the Septum III System — ravaged by centuries of war and noble conflict.
+          A vast industrial world orbiting the dying sun of the Chalnath Expanse — home to forges,
+          manufactoria, and machine cults that have endured centuries of ceaseless labor.
         </p>
 
         <div style={{ marginTop: "1rem" }}>
@@ -56,7 +57,7 @@ export default function Kalidonia() {
         <h2>Planet Details</h2>
         {planets.length > 0 ? (
           planets
-            .filter((p) => p.name === "Kalidonia")
+            .filter((p) => p.name === "Haephos")
             .map((p) => (
               <div
                 key={p.id}
@@ -66,10 +67,10 @@ export default function Kalidonia() {
                   borderRadius: "12px",
                   padding: "1rem",
                   marginBottom: "1.5rem",
-                  boxShadow: "0 0 10px rgba(0, 0, 255, 0.2)",
+                  boxShadow: "0 0 10px rgba(255, 128, 0, 0.25)",
                 }}
               >
-                <h2 style={{ color: "#4da6ff" }}>{p.name}</h2>
+                <h2 style={{ color: "#ff944d" }}>{p.name}</h2>
                 <p>{p.details}</p>
                 {p.population && (
                   <p>
@@ -108,7 +109,7 @@ export default function Kalidonia() {
         >
           {factions.length > 0 ? (
             factions
-              .filter((f) => f.planet_id === 1) // 🔹 Only Kalidonia factions
+              .filter((f) => f.planet_id === 2) // 🔹 Only Haephos factions
               .map((f) => (
                 <div
                   key={f.id}
@@ -117,10 +118,10 @@ export default function Kalidonia() {
                     background: "#1e1e1e",
                     borderRadius: "12px",
                     padding: "1rem",
-                    boxShadow: "0 0 10px rgba(0, 0, 255, 0.2)",
+                    boxShadow: "0 0 10px rgba(255, 128, 0, 0.25)",
                   }}
                 >
-                  <h3 style={{ color: "#4da6ff" }}>{f.name}</h3>
+                  <h3 style={{ color: "#ff944d" }}>{f.name}</h3>
                   <p>{f.description}</p>
                 </div>
               ))

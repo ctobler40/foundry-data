@@ -38,6 +38,12 @@ export const SEARCH_ENDPOINTS = [
     path: "/campaign/kalidonia",
     note: "Planet-specific location page.",
   },
+  {
+    name: "Haephos",
+    url: `${API_URL}api/campaign/planets`,
+    path: "/campaign/haephos",
+    note: "Planet-specific location page for the industrial world of Haephos.",
+  },
 
   // =====================================================================
   // ⚔️ Combat Reference System

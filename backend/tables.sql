@@ -72,6 +72,7 @@ CREATE TABLE campaign_planets (
 CREATE TABLE campaign_factions (
     id SERIAL PRIMARY KEY,
     campaign_id INTEGER REFERENCES campaign(id) ON DELETE CASCADE,
+    planet_id INTEGER REFERENCES campaign_planets(id) ON DELETE CASCADE, 
     name TEXT NOT NULL,
     description TEXT,
     territory TEXT,
