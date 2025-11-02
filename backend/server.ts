@@ -1641,7 +1641,11 @@ app.put("/api/timeline/:id", async (req: Request, res: Response) => {
       source_file,
     } = req.body;
 
-    // Fallback Imperial Code if not manually provided
+    // Convert empty strings to null for optional numeric fields
+    related_character = related_character || null;
+    related_campaign = related_campaign || null;
+
+    // Default Imperial code generation
     const code = imperial_code?.trim() || generateImperialCode(event_date);
     const millennium = 42;
 
@@ -1661,22 +1665,23 @@ app.put("/api/timeline/:id", async (req: Request, res: Response) => {
       [
         title,
         description,
-        event_date,
+        event_date || null,
         code,
         millennium,
         related_character,
         related_campaign,
-        source_file,
+        source_file || "Custom",
         id,
       ]
     );
 
     if (rows.length === 0)
       return res.status(404).json({ error: "Event not found" });
+
     res.json(rows[0]);
-  } catch (err) {
-    console.error("Error updating event:", err);
-    res.status(500).json({ error: "Internal Server Error" });
+  } catch (err: any) {
+    console.error("Error updating event:", err.message || err);
+    res.status(500).json({ error: err.message || "Internal Server Error" });
   }
 });
 
