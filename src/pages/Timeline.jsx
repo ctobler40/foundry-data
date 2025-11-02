@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 
 const API_URL = process.env.REACT_APP_API_URL || "http://localhost:6500/";
 
-// Helper: convert a normal date into an Imperial Date (approx.)
 function toImperialDate(date) {
   const d = new Date(date);
   if (isNaN(d)) return "";
@@ -10,9 +9,19 @@ function toImperialDate(date) {
   const fraction = Math.floor((dayOfYear / 365) * 1000)
     .toString()
     .padStart(3, "0");
-  const millennium = 42; // Warhammer 40k — 42nd Millennium
-  const accuracy = 3; // Administratum-confirmed
+  const millennium = 42;
+  const accuracy = 3;
   return `${accuracy}.${fraction}.M${millennium}`;
+}
+
+function getEraLabel(imperialCode) {
+  if (!imperialCode) return "Undated Record";
+  const parts = imperialCode.split(".");
+  const frac = parseInt(parts[1] || "0", 10);
+  if (frac < 250) return "Early 42nd Millennium";
+  if (frac < 500) return "Mid 42nd Millennium";
+  if (frac < 750) return "Late 42nd Millennium";
+  return "End of the 42nd Millennium";
 }
 
 export default function Timeline() {
@@ -20,6 +29,7 @@ export default function Timeline() {
   const [selectedMillennium, setSelectedMillennium] = useState(42);
   const [filteredEvents, setFilteredEvents] = useState([]);
   const [showForm, setShowForm] = useState(false);
+  const [editingEvent, setEditingEvent] = useState(null);
   const [form, setForm] = useState({
     title: "",
     description: "",
@@ -30,9 +40,7 @@ export default function Timeline() {
     source_file: "Custom",
   });
 
-  // ----------------------------------------
-  // Fetch All Events
-  // ----------------------------------------
+  // Fetch all events
   useEffect(() => {
     const fetchEvents = async () => {
       try {
@@ -46,9 +54,7 @@ export default function Timeline() {
     fetchEvents();
   }, []);
 
-  // ----------------------------------------
-  // Filter by Selected Millennium
-  // ----------------------------------------
+  // Filter and sort by millennium
   useEffect(() => {
     const millenniaEvents = events.filter(
       (ev) =>
@@ -56,7 +62,6 @@ export default function Timeline() {
         (ev.imperial_code && ev.imperial_code.includes(`M${selectedMillennium}`))
     );
 
-    // Sort by Imperial fraction if possible
     millenniaEvents.sort((a, b) => {
       const getFrac = (code) => {
         if (!code) return 0;
@@ -69,30 +74,41 @@ export default function Timeline() {
     setFilteredEvents(millenniaEvents);
   }, [selectedMillennium, events]);
 
-  // ----------------------------------------
-  // Form Control
-  // ----------------------------------------
-  const toggleForm = () => {
-    setShowForm(!showForm);
-    setForm({
-      title: "",
-      description: "",
-      event_date: "",
-      imperial_code: "",
-      related_character: "",
-      related_campaign: "",
-      source_file: "Custom",
-    });
+  // ------------------- FORM LOGIC -------------------
+  const toggleForm = (eventToEdit = null) => {
+    if (eventToEdit) {
+      // Editing existing event
+      setEditingEvent(eventToEdit);
+      setForm({
+        title: eventToEdit.title,
+        description: eventToEdit.description,
+        event_date: eventToEdit.event_date?.slice(0, 10) || "",
+        imperial_code: eventToEdit.imperial_code || "",
+        related_character: eventToEdit.related_character || "",
+        related_campaign: eventToEdit.related_campaign || "",
+        source_file: eventToEdit.source_file || "Custom",
+      });
+    } else {
+      // Adding new event
+      setEditingEvent(null);
+      setForm({
+        title: "",
+        description: "",
+        event_date: "",
+        imperial_code: "",
+        related_character: "",
+        related_campaign: "",
+        source_file: "Custom",
+      });
+    }
+    setShowForm(true);
   };
 
-  const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
-  };
+  const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Auto-generate imperial code if not manually provided
     const imperial_code =
       form.imperial_code.trim() || toImperialDate(form.event_date);
 
@@ -104,36 +120,52 @@ export default function Timeline() {
     };
 
     try {
-      await fetch(`${API_URL}api/timeline`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      toggleForm();
+      if (editingEvent) {
+        // PUT update
+        await fetch(`${API_URL}api/timeline/${editingEvent.id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+      } else {
+        // POST new
+        await fetch(`${API_URL}api/timeline`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+      }
+
+      setShowForm(false);
+      setEditingEvent(null);
+
       const res = await fetch(`${API_URL}api/timeline`);
       const data = await res.json();
       setEvents(data);
     } catch (err) {
-      console.error("Error adding event:", err);
+      console.error("Error saving event:", err);
     }
   };
 
-  // ----------------------------------------
-  // Render
-  // ----------------------------------------
+  const handleCancelEdit = () => {
+    setEditingEvent(null);
+    setShowForm(false);
+  };
+
+  // ------------------- RENDER -------------------
   return (
     <div className="page-container">
       <h1 className="page-title">Imperial Chronology — 42nd Millennium</h1>
 
       <div style={{ textAlign: "center", marginBottom: "1rem" }}>
-        <button onClick={toggleForm} className="modern-btn">
+        <button onClick={() => toggleForm()} className="modern-btn">
           {showForm ? "Close Form" : "Add Event"}
         </button>
       </div>
 
-      {/* ---------- Add Event Form ---------- */}
       {showForm && (
-        <form onSubmit={handleSubmit} className="timeline-form">
+        <form onSubmit={handleSubmit} className="timeline-form fade-in">
+          <h2>{editingEvent ? "Update Event" : "Add New Event"}</h2>
           <input
             type="text"
             name="title"
@@ -182,13 +214,21 @@ export default function Timeline() {
             onChange={handleChange}
             className="modern-input"
           />
-          <button
-            type="submit"
-            className="modern-btn"
-            style={{ marginTop: "1rem" }}
-          >
-            Submit Event
-          </button>
+          <div style={{ marginTop: "1rem" }}>
+            <button type="submit" className="modern-btn">
+              {editingEvent ? "Save Changes" : "Submit Event"}
+            </button>
+            {editingEvent && (
+              <button
+                type="button"
+                onClick={handleCancelEdit}
+                className="modern-btn cancel-btn"
+                style={{ marginLeft: "0.5rem" }}
+              >
+                Cancel
+              </button>
+            )}
+          </div>
         </form>
       )}
 
@@ -207,32 +247,53 @@ export default function Timeline() {
 
       {/* ---------- EVENT LIST ---------- */}
       <div className="month-view">
-        <h2 className="month-title">Millennium {selectedMillennium}</h2>
-        <div className="month-grid">
-          {filteredEvents.length === 0 ? (
-            <p className="no-events">No recorded events in M{selectedMillennium}</p>
-          ) : (
-            filteredEvents.map((ev) => (
-              <div key={ev.id} className="event-card">
-                <h3>
-                  {ev.imperial_code || toImperialDate(ev.event_date)} —{" "}
-                  {ev.title}
-                </h3>
-                <p>{ev.description || "No description available."}</p>
-                {ev.character_name && (
-                  <p>
-                    <strong>Character:</strong> {ev.character_name}
-                  </p>
-                )}
-                {ev.campaign_title && (
-                  <p>
-                    <strong>Campaign:</strong> {ev.campaign_title}
-                  </p>
-                )}
+        <h2 className="month-title">
+          Records of the {selectedMillennium}th Millennium
+        </h2>
+
+        {filteredEvents.length === 0 ? (
+          <p className="no-events">No recorded events in M{selectedMillennium}</p>
+        ) : (
+          filteredEvents.map((ev, i) => {
+            const imperial = ev.imperial_code || toImperialDate(ev.event_date);
+            const era = getEraLabel(imperial);
+            return (
+              <div
+                key={ev.id}
+                className={`event-card fade-in ${i % 2 === 0 ? "alt" : ""}`}
+              >
+                <div className="event-header">
+                  <span className="imperial-badge">{imperial}</span>
+                  <span className="era-label">{era}</span>
+                </div>
+                <h3 className="event-title">{ev.title}</h3>
+                <p className="event-desc">
+                  {ev.description || "No description available."}
+                </p>
+                <div className="event-meta">
+                  {ev.character_name && (
+                    <p>
+                      <strong>Character:</strong> {ev.character_name}
+                    </p>
+                  )}
+                  {ev.campaign_title && (
+                    <p>
+                      <strong>Campaign:</strong> {ev.campaign_title}
+                    </p>
+                  )}
+                </div>
+                <div style={{ textAlign: "right", marginTop: "0.5rem" }}>
+                  <button
+                    onClick={() => toggleForm(ev)}
+                    className="modern-btn small-btn"
+                  >
+                    Edit
+                  </button>
+                </div>
               </div>
-            ))
-          )}
-        </div>
+            );
+          })
+        )}
       </div>
     </div>
   );

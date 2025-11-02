@@ -1253,3 +1253,78 @@ textarea.modern-input:focus {
   border-color: #00d2ff;
   box-shadow: 0 0 12px rgba(0, 210, 255, 0.2);
 }
+
+.event-card {
+  background: #101018;
+  border-left: 4px solid #48f;
+  border-radius: 10px;
+  padding: 1rem 1.2rem;
+  margin: 1rem 0;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+}
+.event-card.alt {
+  border-left-color: #5cf;
+  background: #181824;
+}
+.event-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 3px 10px rgba(0,0,0,0.6);
+}
+.event-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.imperial-badge {
+  background: linear-gradient(90deg, #4aa3ff, #2958c2);
+  color: #fff;
+  padding: 0.25rem 0.6rem;
+  border-radius: 4px;
+  font-family: "Consolas", monospace;
+  font-size: 0.9rem;
+}
+.era-label {
+  color: #aaa;
+  font-size: 0.85rem;
+  font-style: italic;
+}
+.event-title {
+  color: #fff;
+  margin: 0.4rem 0;
+  font-size: 1.2rem;
+}
+.event-desc {
+  color: #ccc;
+  margin-bottom: 0.6rem;
+}
+.event-meta {
+  color: #888;
+  font-size: 0.9rem;
+  border-top: 1px solid #222;
+  padding-top: 0.4rem;
+}
+.fade-in {
+  animation: fadeIn 0.4s ease-in;
+}
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.cancel-btn {
+  background: #333;
+  color: #bbb;
+}
+.cancel-btn:hover {
+  background: #444;
+  color: #fff;
+}
+.small-btn {
+  font-size: 0.85rem;
+  padding: 0.3rem 0.6rem;
+  background: #293a5f;
+}
+.small-btn:hover {
+  background: #3c5696;
+}
