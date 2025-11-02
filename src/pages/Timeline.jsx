@@ -58,11 +58,20 @@ export default function Timeline() {
   // ------------------- FORM LOGIC -------------------
   const toggleForm = (eventToEdit = null) => {
     if (eventToEdit) {
+      let safeDate = "";
+      const rawDate = eventToEdit.event_date;
+      // Clean anything invalid, like "+042027-06"
+      if (rawDate && typeof rawDate === "string") {
+        if (!rawDate.startsWith("+") && !isNaN(Date.parse(rawDate))) {
+          safeDate = new Date(rawDate).toISOString().slice(0, 10);
+        }
+      }
+
       setEditingEvent(eventToEdit);
       setForm({
-        title: eventToEdit.title,
-        description: eventToEdit.description,
-        event_date: eventToEdit.event_date?.slice(0, 10) || "",
+        title: eventToEdit.title || "",
+        description: eventToEdit.description || "",
+        event_date: safeDate, // cleaned or blank
         imperial_code: eventToEdit.imperial_code || "",
         related_character: eventToEdit.related_character || "",
         related_campaign: eventToEdit.related_campaign || "",
@@ -88,37 +97,66 @@ export default function Timeline() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const imperial_code =
-      form.imperial_code.trim() || toImperialDate(form.event_date);
+    // --- Sanitize event_date properly ---
+    let cleanDate = null;
+    if (form.event_date && !isNaN(Date.parse(form.event_date))) {
+      // Valid ISO date → keep YYYY-MM-DD
+      cleanDate = new Date(form.event_date).toISOString().slice(0, 10);
+    } else {
+      cleanDate = null;
+    }
+
+    // --- Generate proper imperial code ---
+    const imperial_code = form.imperial_code.trim() || toImperialDate(cleanDate);
+
+    // --- Convert foreign keys safely ---
+    const related_character = form.related_character
+      ? parseInt(form.related_character)
+      : null;
+    const related_campaign = form.related_campaign
+      ? parseInt(form.related_campaign)
+      : null;
 
     const payload = {
-      ...form,
+      title: form.title.trim(),
+      description: form.description.trim(),
+      event_date: cleanDate,
       imperial_code,
-      related_character: form.related_character || null,
-      related_campaign: form.related_campaign || null,
+      related_character,
+      related_campaign,
+      source_file: form.source_file || "Custom",
     };
 
+    console.log("Submitting payload:", payload);
+
     try {
-      if (editingEvent) {
-        await fetch(`${API_URL}api/timeline/${editingEvent.id}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        });
-      } else {
-        await fetch(`${API_URL}api/timeline`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        });
+      const url = editingEvent
+        ? `${API_URL}api/timeline/${editingEvent.id}`
+        : `${API_URL}api/timeline`;
+
+      const method = editingEvent ? "PUT" : "POST";
+
+      const res = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        console.error("Server responded with error:", data);
+        alert(`Failed to save event: ${data.error || res.statusText}`);
+        return;
       }
 
       setShowForm(false);
       setEditingEvent(null);
 
-      const res = await fetch(`${API_URL}api/timeline`);
-      const data = await res.json();
-      setEvents(data);
+      // Refresh events
+      const refreshed = await fetch(`${API_URL}api/timeline`);
+      const updatedEvents = await refreshed.json();
+      setEvents(updatedEvents);
     } catch (err) {
       console.error("Error saving event:", err);
     }
