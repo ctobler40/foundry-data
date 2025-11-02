@@ -1563,8 +1563,13 @@ app.get("/api/timeline/:id", async (req: Request, res: Response) => {
 
 app.post("/api/timeline", async (req: Request, res: Response) => {
   try {
-    const { title, description, event_date, related_character, related_campaign, source_file } =
+    let { title, description, event_date, related_character, related_campaign, source_file } =
       req.body;
+
+    // Convert empty strings to null for numeric foreign keys
+    related_character = related_character || null;
+    related_campaign = related_campaign || null;
+
     const { rows } = await db.query(
       `INSERT INTO timeline_events 
        (title, description, event_date, related_character, related_campaign, source_file)
@@ -1572,6 +1577,7 @@ app.post("/api/timeline", async (req: Request, res: Response) => {
        RETURNING *`,
       [title, description, event_date, related_character, related_campaign, source_file || "Custom"]
     );
+
     res.status(201).json(rows[0]);
   } catch (err) {
     console.error("Error creating event:", err);
