@@ -2,27 +2,42 @@ import { useEffect, useState } from "react";
 
 const API_URL = process.env.REACT_APP_API_URL || "http://localhost:6500/";
 
+// Helper: convert a normal date into an Imperial Date (approx.)
+function toImperialDate(date) {
+  const d = new Date(date);
+  if (isNaN(d)) return "";
+  const dayOfYear = Math.floor((d - new Date(d.getFullYear(), 0, 0)) / 86400000);
+  const fraction = Math.floor((dayOfYear / 365) * 1000)
+    .toString()
+    .padStart(3, "0");
+  const millennium = 42; // Warhammer 40k — 42nd Millennium
+  const accuracy = 3; // Administratum-confirmed
+  return `${accuracy}.${fraction}.M${millennium}`;
+}
+
 export default function Timeline() {
   const [events, setEvents] = useState([]);
-  const [selectedYear, setSelectedYear] = useState(null);
+  const [selectedMillennium, setSelectedMillennium] = useState(42);
   const [filteredEvents, setFilteredEvents] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({
     title: "",
     description: "",
     event_date: "",
+    imperial_code: "",
     related_character: "",
     related_campaign: "",
     source_file: "Custom",
   });
 
-  // Load all events
+  // ----------------------------------------
+  // Fetch All Events
+  // ----------------------------------------
   useEffect(() => {
     const fetchEvents = async () => {
       try {
         const res = await fetch(`${API_URL}api/timeline`);
         const data = await res.json();
-        console.log(data)
         setEvents(data);
       } catch (err) {
         console.error("Error fetching timeline events:", err);
@@ -31,50 +46,68 @@ export default function Timeline() {
     fetchEvents();
   }, []);
 
-  // Filter by selected year
+  // ----------------------------------------
+  // Filter by Selected Millennium
+  // ----------------------------------------
   useEffect(() => {
-    if (!selectedYear) return;
-    const yearEvents = events.filter((ev) => {
-      if (!ev.event_date) return false;
-      const year = new Date(ev.event_date).getFullYear();
-      return year === selectedYear;
+    const millenniaEvents = events.filter(
+      (ev) =>
+        ev.millennium === selectedMillennium ||
+        (ev.imperial_code && ev.imperial_code.includes(`M${selectedMillennium}`))
+    );
+
+    // Sort by Imperial fraction if possible
+    millenniaEvents.sort((a, b) => {
+      const getFrac = (code) => {
+        if (!code) return 0;
+        const parts = code.split(".");
+        return parseInt(parts[1] || "0", 10);
+      };
+      return getFrac(a.imperial_code) - getFrac(b.imperial_code);
     });
-    setFilteredEvents(yearEvents);
-  }, [selectedYear, events]);
 
-  // Generate years 42000–42050
-  const years = Array.from({ length: 16 }, (_, i) => 42015 + i);
+    setFilteredEvents(millenniaEvents);
+  }, [selectedMillennium, events]);
 
-  // When year clicked, toggle expansion
-  const handleYearClick = (year) => {
-    setSelectedYear(selectedYear === year ? null : year);
-  };
-
-  // Open/close form
+  // ----------------------------------------
+  // Form Control
+  // ----------------------------------------
   const toggleForm = () => {
     setShowForm(!showForm);
     setForm({
       title: "",
       description: "",
       event_date: "",
+      imperial_code: "",
       related_character: "",
       related_campaign: "",
       source_file: "Custom",
     });
   };
 
-  // Handle form change
-  const handleChange = (e) =>
+  const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
+  };
 
-  // Submit new event
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // Auto-generate imperial code if not manually provided
+    const imperial_code =
+      form.imperial_code.trim() || toImperialDate(form.event_date);
+
+    const payload = {
+      ...form,
+      imperial_code,
+      related_character: form.related_character || null,
+      related_campaign: form.related_campaign || null,
+    };
+
     try {
       await fetch(`${API_URL}api/timeline`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify(payload),
       });
       toggleForm();
       const res = await fetch(`${API_URL}api/timeline`);
@@ -85,32 +118,12 @@ export default function Timeline() {
     }
   };
 
-  // Count events for each year
-  const yearCounts = years.reduce((acc, year) => {
-    const count = events.filter((ev) => {
-      if (!ev.event_date) return false;
-      console.log(ev.event_date);
-      return new Date(ev.event_date).getFullYear() === year;
-    }).length;
-    return { ...acc, [year]: count };
-  }, {});
-
-  console.log(events)
-
-  // Count events for each month in selected year
-  const monthCounts =
-    selectedYear &&
-    Array.from({ length: 12 }, (_, i) => {
-      const count = filteredEvents.filter((ev) => {
-        const d = new Date(ev.event_date);
-        return d.getMonth() === i;
-      }).length;
-      return count;
-    });
-
+  // ----------------------------------------
+  // Render
+  // ----------------------------------------
   return (
     <div className="page-container">
-      <h1 className="page-title">Imperial Chronology</h1>
+      <h1 className="page-title">Imperial Chronology — 42nd Millennium</h1>
 
       <div style={{ textAlign: "center", marginBottom: "1rem" }}>
         <button onClick={toggleForm} className="modern-btn">
@@ -136,7 +149,14 @@ export default function Timeline() {
             value={form.event_date}
             onChange={handleChange}
             className="modern-input"
-            required
+          />
+          <input
+            type="text"
+            name="imperial_code"
+            placeholder="Imperial Date (e.g. 3.234.M42)"
+            value={form.imperial_code}
+            onChange={handleChange}
+            className="modern-input"
           />
           <textarea
             name="description"
@@ -162,80 +182,58 @@ export default function Timeline() {
             onChange={handleChange}
             className="modern-input"
           />
-          <button type="submit" className="modern-btn" style={{ marginTop: "1rem" }}>
+          <button
+            type="submit"
+            className="modern-btn"
+            style={{ marginTop: "1rem" }}
+          >
             Submit Event
           </button>
         </form>
       )}
 
-      {/* ---------- YEAR SCROLL LINE ---------- */}
+      {/* ---------- TIMELINE VIEW ---------- */}
       <div className="timeline-years-container">
         <div className="timeline-years">
-          {years.map((year) => (
-            <div
-              key={year}
-              className={`timeline-year ${selectedYear === year ? "active" : ""}`}
-              onClick={() => handleYearClick(year)}
-            >
-              <span>{year}</span>
-              {yearCounts[year] > 0 && (
-                <span className="year-count">{yearCounts[year]}</span>
-              )}
-            </div>
-          ))}
+          <div
+            className={`timeline-year active`}
+            onClick={() => setSelectedMillennium(42)}
+          >
+            <span>M{selectedMillennium}</span>
+            <span className="year-count">{filteredEvents.length}</span>
+          </div>
         </div>
       </div>
 
-      {/* ---------- MONTH VIEW ---------- */}
-      {selectedYear && (
-        <div className="month-view">
-          <h2 className="month-title">Year {selectedYear}</h2>
-          <div className="month-grid">
-            {Array.from({ length: 12 }, (_, i) => i + 1).map((month) => {
-              const monthEvents = filteredEvents.filter((ev) => {
-                const d = new Date(ev.event_date);
-                return d.getMonth() + 1 === month;
-              });
-
-              const monthName = new Date(selectedYear, month - 1).toLocaleString(
-                "default",
-                { month: "long" }
-              );
-
-              const eventCount = monthCounts ? monthCounts[month - 1] : 0;
-
-              return (
-                <div
-                  key={month}
-                  className={`month-cell ${eventCount > 0 ? "has-events" : ""}`}
-                >
-                  <h3>
-                    {monthName}
-                    {eventCount > 0 && (
-                      <span className="month-count">{eventCount}</span>
-                    )}
-                  </h3>
-                  <div className="month-events">
-                    {monthEvents.length === 0 ? (
-                      <p className="no-events">No events</p>
-                    ) : (
-                      monthEvents.map((ev) => (
-                        <div key={ev.id} className="event-dot" title={ev.title}>
-                          <span className="event-popup">
-                            <strong>{ev.title}</strong>
-                            <br />
-                            {ev.description || "No description"}
-                          </span>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+      {/* ---------- EVENT LIST ---------- */}
+      <div className="month-view">
+        <h2 className="month-title">Millennium {selectedMillennium}</h2>
+        <div className="month-grid">
+          {filteredEvents.length === 0 ? (
+            <p className="no-events">No recorded events in M{selectedMillennium}</p>
+          ) : (
+            filteredEvents.map((ev) => (
+              <div key={ev.id} className="event-card">
+                <h3>
+                  {ev.imperial_code || toImperialDate(ev.event_date)} —{" "}
+                  {ev.title}
+                </h3>
+                <p>{ev.description || "No description available."}</p>
+                {ev.character_name && (
+                  <p>
+                    <strong>Character:</strong> {ev.character_name}
+                  </p>
+                )}
+                {ev.campaign_title && (
+                  <p>
+                    <strong>Campaign:</strong> {ev.campaign_title}
+                  </p>
+                )}
+              </div>
+            ))
+          )}
         </div>
-      )}
+      </div>
     </div>
   );
 }

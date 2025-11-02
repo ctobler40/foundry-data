@@ -1531,16 +1531,19 @@ app.delete("/api/blessings/:id", async (req: Request, res: Response) => {
 });
 
 // ============================================================================
-// TIMELINE ROUTES
+// TIMELINE ROUTES — Imperial Dating System (M42 Default)
 // ============================================================================
 app.get("/api/timeline", async (req: Request, res: Response) => {
   try {
     const { rows } = await db.query(`
-      SELECT t.*, c.name AS character_name, ca.title AS campaign_title
+      SELECT 
+        t.*, 
+        c.name AS character_name, 
+        ca.title AS campaign_title
       FROM timeline_events t
       LEFT JOIN characters c ON t.related_character = c.id
       LEFT JOIN campaign ca ON t.related_campaign = ca.id
-      ORDER BY event_date ASC, id ASC;
+      ORDER BY millennium ASC, imperial_code ASC, event_date ASC, t.id ASC;
     `);
     res.json(rows);
   } catch (err) {
@@ -1552,8 +1555,12 @@ app.get("/api/timeline", async (req: Request, res: Response) => {
 app.get("/api/timeline/:id", async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { rows } = await db.query("SELECT * FROM timeline_events WHERE id = $1", [id]);
-    if (rows.length === 0) return res.status(404).json({ error: "Event not found" });
+    const { rows } = await db.query(
+      "SELECT * FROM timeline_events WHERE id = $1",
+      [id]
+    );
+    if (rows.length === 0)
+      return res.status(404).json({ error: "Event not found" });
     res.json(rows[0]);
   } catch (err) {
     console.error("Error fetching event:", err);
@@ -1561,21 +1568,57 @@ app.get("/api/timeline/:id", async (req: Request, res: Response) => {
   }
 });
 
+// Helper function for Imperial Code generation (same logic as frontend)
+function generateImperialCode(event_date?: string): string {
+  if (!event_date) return "";
+  const d = new Date(event_date);
+  if (isNaN(d.getTime())) return "";
+  const dayOfYear = Math.floor(
+    (d.getTime() - new Date(d.getFullYear(), 0, 0).getTime()) / 86400000
+  );
+  const fraction = Math.floor((dayOfYear / 365) * 1000)
+    .toString()
+    .padStart(3, "0");
+  const accuracy = 3; // Administratum-confirmed by default
+  const millennium = 42;
+  return `${accuracy}.${fraction}.M${millennium}`;
+}
+
 app.post("/api/timeline", async (req: Request, res: Response) => {
   try {
-    let { title, description, event_date, related_character, related_campaign, source_file } =
-      req.body;
+    let {
+      title,
+      description,
+      event_date,
+      imperial_code,
+      related_character,
+      related_campaign,
+      source_file,
+    } = req.body;
 
-    // Convert empty strings to null for numeric foreign keys
+    // Convert empty strings to null
     related_character = related_character || null;
     related_campaign = related_campaign || null;
 
+    // Auto-generate Imperial Code + Millennium if not provided
+    const code = imperial_code?.trim() || generateImperialCode(event_date);
+    const millennium = 42; // Fixed for current era
+
     const { rows } = await db.query(
       `INSERT INTO timeline_events 
-       (title, description, event_date, related_character, related_campaign, source_file)
-       VALUES ($1,$2,$3,$4,$5,$6)
+       (title, description, event_date, imperial_code, millennium, related_character, related_campaign, source_file)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
        RETURNING *`,
-      [title, description, event_date, related_character, related_campaign, source_file || "Custom"]
+      [
+        title,
+        description,
+        event_date,
+        code,
+        millennium,
+        related_character,
+        related_campaign,
+        source_file || "Custom",
+      ]
     );
 
     res.status(201).json(rows[0]);
@@ -1588,17 +1631,48 @@ app.post("/api/timeline", async (req: Request, res: Response) => {
 app.put("/api/timeline/:id", async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { title, description, event_date, related_character, related_campaign, source_file } =
-      req.body;
+    let {
+      title,
+      description,
+      event_date,
+      imperial_code,
+      related_character,
+      related_campaign,
+      source_file,
+    } = req.body;
+
+    // Fallback Imperial Code if not manually provided
+    const code = imperial_code?.trim() || generateImperialCode(event_date);
+    const millennium = 42;
+
     const { rows } = await db.query(
       `UPDATE timeline_events
-       SET title=$1, description=$2, event_date=$3, related_character=$4,
-           related_campaign=$5, source_file=$6
-       WHERE id=$7
+       SET 
+         title = $1,
+         description = $2,
+         event_date = $3,
+         imperial_code = $4,
+         millennium = $5,
+         related_character = $6,
+         related_campaign = $7,
+         source_file = $8
+       WHERE id = $9
        RETURNING *`,
-      [title, description, event_date, related_character, related_campaign, source_file, id]
+      [
+        title,
+        description,
+        event_date,
+        code,
+        millennium,
+        related_character,
+        related_campaign,
+        source_file,
+        id,
+      ]
     );
-    if (rows.length === 0) return res.status(404).json({ error: "Event not found" });
+
+    if (rows.length === 0)
+      return res.status(404).json({ error: "Event not found" });
     res.json(rows[0]);
   } catch (err) {
     console.error("Error updating event:", err);
