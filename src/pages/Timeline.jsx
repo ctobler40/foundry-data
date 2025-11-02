@@ -43,7 +43,7 @@ export default function Timeline() {
   }, [selectedYear, events]);
 
   // Generate years 42000–42050
-  const years = Array.from({ length: 51 }, (_, i) => 42000 + i);
+  const years = Array.from({ length: 16 }, (_, i) => 42015 + i);
 
   // When year clicked, toggle expansion
   const handleYearClick = (year) => {
