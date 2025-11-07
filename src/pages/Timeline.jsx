@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 
 const API_URL = process.env.REACT_APP_API_URL || "http://localhost:6500/";
 
-// ---------- Helpers ----------
 function toImperialDate(session) {
   if (!session || isNaN(session)) return "";
   const fraction = session.toString().padStart(3, "0");
@@ -11,9 +10,9 @@ function toImperialDate(session) {
   return `${accuracy}.${fraction}.M${millennium}`;
 }
 
-// ---------- Main Component ----------
 export default function Timeline() {
   const [events, setEvents] = useState([]);
+  const [characters, setCharacters] = useState([]);
   const [selectedMillennium, setSelectedMillennium] = useState(42);
   const [selectedSession, setSelectedSession] = useState(null);
   const [showForm, setShowForm] = useState(false);
@@ -24,22 +23,28 @@ export default function Timeline() {
     event_session: "",
     imperial_code: "",
     related_character: "",
-    related_campaign: "",
+    additional_characters: [],
+    related_campaign: "Chalnath Expanse",
     source_file: "Custom",
   });
 
   // ------------------- FETCH -------------------
   useEffect(() => {
-    const fetchEvents = async () => {
+    const fetchAll = async () => {
       try {
-        const res = await fetch(`${API_URL}api/timeline`);
-        const data = await res.json();
-        setEvents(data);
+        const [evRes, chRes] = await Promise.all([
+          fetch(`${API_URL}api/timeline`),
+          fetch(`${API_URL}api/characters`)
+        ]);
+        const [evData, chData] = await Promise.all([evRes.json(), chRes.json()]);
+        setEvents(evData);
+        // Only main importance = 1
+        setCharacters(chData);
       } catch (err) {
-        console.error("Error fetching timeline events:", err);
+        console.error("Error fetching data:", err);
       }
     };
-    fetchEvents();
+    fetchAll();
   }, []);
 
   // ------------------- FORM LOGIC -------------------
@@ -52,7 +57,8 @@ export default function Timeline() {
         event_session: eventToEdit.event_session || "",
         imperial_code: eventToEdit.imperial_code || "",
         related_character: eventToEdit.related_character || "",
-        related_campaign: eventToEdit.related_campaign || "",
+        additional_characters: eventToEdit.additional_characters || [],
+        related_campaign: "Chalnath Expanse",
         source_file: eventToEdit.source_file || "Custom",
       });
     } else {
@@ -63,32 +69,28 @@ export default function Timeline() {
         event_session: "",
         imperial_code: "",
         related_character: "",
-        related_campaign: "",
+        additional_characters: [],
+        related_campaign: "Chalnath Expanse",
         source_file: "Custom",
       });
     }
     setShowForm(true);
   };
 
-  const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
+  const handleChange = (e) =>
+    setForm({ ...form, [e.target.name]: e.target.value });
+
+  const handleMultiSelect = (e) => {
+    const selected = Array.from(e.target.selectedOptions).map(o => parseInt(o.value));
+    setForm({ ...form, additional_characters: selected });
+  };
 
   const handleDelete = async (id) => {
     if (!window.confirm("Are you sure you want to delete this event?")) return;
-
     try {
-      const res = await fetch(`${API_URL}api/timeline/${id}`, {
-        method: "DELETE",
-      });
-
-      if (!res.ok) {
-        const data = await res.json();
-        console.error("Failed to delete:", data);
-        alert(`Failed to delete event: ${data.error || res.statusText}`);
-        return;
-      }
-
-      // Refresh list
-      setEvents((prev) => prev.filter((e) => e.id !== id));
+      const res = await fetch(`${API_URL}api/timeline/${id}`, { method: "DELETE" });
+      if (!res.ok) return alert("Failed to delete event.");
+      setEvents(prev => prev.filter(e => e.id !== id));
     } catch (err) {
       console.error("Error deleting event:", err);
     }
@@ -96,18 +98,13 @@ export default function Timeline() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    const event_session = form.event_session
-      ? parseInt(form.event_session)
-      : null;
-
+    const event_session = form.event_session ? parseInt(form.event_session) : null;
     const imperial_code = form.imperial_code.trim() || toImperialDate(event_session);
     const related_character = form.related_character
       ? parseInt(form.related_character)
       : null;
-    const related_campaign = form.related_campaign
-      ? parseInt(form.related_campaign)
-      : null;
+    const related_campaign = 1; // Always Chalnath Expanse
+    const additional_characters = form.additional_characters || [];
 
     const payload = {
       title: form.title.trim(),
@@ -115,6 +112,7 @@ export default function Timeline() {
       event_session,
       imperial_code,
       related_character,
+      additional_characters,
       related_campaign,
       source_file: form.source_file || "Custom",
     };
@@ -123,51 +121,27 @@ export default function Timeline() {
       const url = editingEvent
         ? `${API_URL}api/timeline/${editingEvent.id}`
         : `${API_URL}api/timeline`;
-
       const method = editingEvent ? "PUT" : "POST";
-
       const res = await fetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-
       const data = await res.json();
-
-      if (!res.ok) {
-        console.error("Server responded with error:", data);
-        alert(`Failed to save event: ${data.error || res.statusText}`);
-        return;
-      }
-
+      if (!res.ok) return alert(`Failed: ${data.error || res.statusText}`);
       setShowForm(false);
       setEditingEvent(null);
-
-      // Refresh events
       const refreshed = await fetch(`${API_URL}api/timeline`);
-      const updatedEvents = await refreshed.json();
-      setEvents(updatedEvents);
+      setEvents(await refreshed.json());
     } catch (err) {
       console.error("Error saving event:", err);
     }
   };
 
-  const handleCancelEdit = () => {
-    setEditingEvent(null);
-    setShowForm(false);
-  };
-
-  // ------------------- GROUPING & FILTER -------------------
-  const sessions = [...new Set(events.map((ev) => ev.event_session))].sort(
-    (a, b) => a - b
-  );
-
+  // ------------------- FILTER -------------------
+  const sessions = [...new Set(events.map((ev) => ev.event_session))].sort((a, b) => a - b);
   const filteredEvents = events
-    .filter(
-      (ev) =>
-        (selectedMillennium === 42 &&
-          (!selectedSession || ev.event_session === selectedSession))
-    )
+    .filter((ev) => !selectedSession || ev.event_session === selectedSession)
     .sort((a, b) => (a.event_session || 0) - (b.event_session || 0));
 
   // ------------------- RENDER -------------------
@@ -175,18 +149,15 @@ export default function Timeline() {
     <div className="page-container">
       <h1 className="page-title">Imperial Chronology — 42nd Millennium</h1>
 
-      {/* ---------- CONTROLS ---------- */}
       <div style={{ textAlign: "center", marginBottom: "1rem" }}>
         <button onClick={() => toggleForm()} className="modern-btn">
           {showForm ? "Close Form" : "Add Event"}
         </button>
       </div>
 
-      {/* ---------- SESSION FILTER ---------- */}
       <div className="session-filter" style={{ textAlign: "center", marginBottom: "1rem" }}>
-        <label htmlFor="sessionSelect"><strong>Filter by Session:</strong> </label>
+        <label><strong>Filter by Session:</strong> </label>
         <select
-          id="sessionSelect"
           value={selectedSession || ""}
           onChange={(e) =>
             setSelectedSession(e.target.value ? parseInt(e.target.value) : null)
@@ -203,7 +174,6 @@ export default function Timeline() {
         </select>
       </div>
 
-      {/* ---------- FORM ---------- */}
       {showForm && (
         <form onSubmit={handleSubmit} className="timeline-form fade-in">
           <h2>{editingEvent ? "Update Event" : "Add New Event"}</h2>
@@ -240,20 +210,42 @@ export default function Timeline() {
             className="modern-input"
             rows="3"
           />
-          <input
-            type="number"
+          <label><strong>Main Character:</strong></label>
+          <select
             name="related_character"
-            placeholder="Character ID (optional)"
             value={form.related_character}
             onChange={handleChange}
             className="modern-input"
-          />
+          >
+            <option value="">None</option>
+            {characters
+              .filter((c) => c.characterimportance === 1)
+              .map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
+          </select>
+
+          <label><strong>Additional Characters:</strong></label>
+          <select
+            multiple
+            value={form.additional_characters}
+            onChange={handleMultiSelect}
+            className="modern-input"
+          >
+            {characters.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
+            ))}
+          </select>
+
           <input
-            type="number"
+            type="text"
             name="related_campaign"
-            placeholder="Campaign ID (optional)"
-            value={form.related_campaign}
-            onChange={handleChange}
+            value="Chalnath Expanse"
+            disabled
             className="modern-input"
           />
           <div style={{ marginTop: "1rem" }}>
@@ -263,7 +255,7 @@ export default function Timeline() {
             {editingEvent && (
               <button
                 type="button"
-                onClick={handleCancelEdit}
+                onClick={() => setShowForm(false)}
                 className="modern-btn cancel-btn"
                 style={{ marginLeft: "0.5rem" }}
               >
@@ -274,53 +266,27 @@ export default function Timeline() {
         </form>
       )}
 
-      {/* ---------- TIMELINE VIEW ---------- */}
       <div className="month-view">
         <h2 className="month-title">
           {selectedSession
             ? `Session ${selectedSession} — Recorded Events`
             : `All Recorded Sessions of the ${selectedMillennium}th Millennium`}
         </h2>
-
         {filteredEvents.length === 0 ? (
-          <p className="no-events">
-            No recorded events for this selection.
-          </p>
+          <p className="no-events">No recorded events for this selection.</p>
         ) : (
           filteredEvents.map((ev, i) => {
             const imperial = ev.imperial_code || toImperialDate(ev.event_session);
             return (
-              <div
-                key={ev.id}
-                className={`event-card ${i % 2 === 0 ? "alt" : ""}`}
-              >
+              <div key={ev.id} className={`event-card ${i % 2 === 0 ? "alt" : ""}`}>
                 <div className="event-header">
                   <span className="imperial-badge">{imperial}</span>
-                  {ev.event_session && (
-                    <span className="session-tag">Session {ev.event_session}</span>
-                  )}
+                  <span className="session-tag">Session {ev.event_session}</span>
                 </div>
                 <h4 className="event-title">{ev.title}</h4>
-                <p className="event-desc">
-                  {ev.description || "No description available."}
-                </p>
-                <div className="event-meta">
-                  {ev.character_name && (
-                    <p>
-                      <strong>Character:</strong> {ev.character_name}
-                    </p>
-                  )}
-                  {ev.campaign_title && (
-                    <p>
-                      <strong>Campaign:</strong> {ev.campaign_title}
-                    </p>
-                  )}
-                </div>
+                <p className="event-desc">{ev.description}</p>
                 <div style={{ textAlign: "right", marginTop: "0.5rem" }}>
-                  <button
-                    onClick={() => toggleForm(ev)}
-                    className="modern-btn small-btn"
-                  >
+                  <button onClick={() => toggleForm(ev)} className="modern-btn small-btn">
                     Edit
                   </button>
                   <button

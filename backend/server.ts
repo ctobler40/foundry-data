@@ -1595,7 +1595,7 @@ function generateImperialCode(event_date?: string): string {
   return `${accuracy}.${fraction}.M${millennium}`;
 }
 
-app.post("/api/timeline", async (req: Request, res: Response) => {
+app.post("/api/timeline", async (req, res) => {
   try {
     let {
       title,
@@ -1604,21 +1604,19 @@ app.post("/api/timeline", async (req: Request, res: Response) => {
       imperial_code,
       related_character,
       related_campaign,
+      additional_characters,
       source_file,
     } = req.body;
 
-    // Convert empty strings to null
     related_character = related_character || null;
-    related_campaign = related_campaign || null;
-
-    // Auto-generate Imperial Code + Millennium if not provided
-    const code = imperial_code?.trim() || generateImperialCode(event_session);
-    const millennium = 42; // Fixed for current era
+    related_campaign = 1; // Always Chalnath Expanse
+    const code = imperial_code?.trim() || "";
+    const millennium = 42;
 
     const { rows } = await db.query(
       `INSERT INTO timeline_events 
-       (title, description, event_session, imperial_code, millennium, related_character, related_campaign, source_file)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
+       (title, description, event_session, imperial_code, millennium, related_character, related_campaign, additional_characters, source_file)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
        RETURNING *`,
       [
         title,
@@ -1628,10 +1626,10 @@ app.post("/api/timeline", async (req: Request, res: Response) => {
         millennium,
         related_character,
         related_campaign,
+        additional_characters || [],
         source_file || "Custom",
       ]
     );
-
     res.status(201).json(rows[0]);
   } catch (err) {
     console.error("Error creating event:", err);
@@ -1639,7 +1637,7 @@ app.post("/api/timeline", async (req: Request, res: Response) => {
   }
 });
 
-app.put("/api/timeline/:id", async (req: Request, res: Response) => {
+app.put("/api/timeline/:id", async (req, res) => {
   try {
     const { id } = req.params;
     let {
@@ -1649,52 +1647,42 @@ app.put("/api/timeline/:id", async (req: Request, res: Response) => {
       imperial_code,
       related_character,
       related_campaign,
+      additional_characters,
       source_file,
     } = req.body;
 
-    // Convert empty strings to null for optional numeric fields
     related_character = related_character || null;
-    related_campaign = related_campaign || null;
-
-    // Default Imperial code generation
-    const code = imperial_code?.trim() || generateImperialCode(event_session);
+    related_campaign = 1; // Always Chalnath Expanse
+    const code = imperial_code?.trim() || "";
     const millennium = 42;
 
     const { rows } = await db.query(
       `UPDATE timeline_events
-       SET 
-         title = $1,
-         description = $2,
-         event_session = $3,
-         imperial_code = $4,
-         millennium = $5,
-         related_character = $6,
-         related_campaign = $7,
-         source_file = $8
-       WHERE id = $9
+       SET title=$1, description=$2, event_session=$3, imperial_code=$4, millennium=$5,
+           related_character=$6, related_campaign=$7, additional_characters=$8, source_file=$9
+       WHERE id=$10
        RETURNING *`,
       [
         title,
         description,
-        event_session || null,
+        event_session,
         code,
         millennium,
         related_character,
         related_campaign,
+        additional_characters || [],
         source_file || "Custom",
         id,
       ]
     );
-
-    if (rows.length === 0)
-      return res.status(404).json({ error: "Event not found" });
-
+    if (rows.length === 0) return res.status(404).json({ error: "Event not found" });
     res.json(rows[0]);
-  } catch (err: any) {
-    console.error("Error updating event:", err.message || err);
-    res.status(500).json({ error: err.message || "Internal Server Error" });
+  } catch (err) {
+    console.error("Error updating event:", err);
+    res.status(500).json({ error: "Internal Server Error" });
   }
 });
+
 
 app.delete("/api/timeline/:id", async (req: Request, res: Response) => {
   try {
