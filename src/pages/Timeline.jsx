@@ -3,32 +3,19 @@ import { useEffect, useState } from "react";
 const API_URL = process.env.REACT_APP_API_URL || "http://localhost:6500/";
 
 // ---------- Helpers ----------
-function toImperialDate(date) {
-  const d = new Date(date);
-  if (isNaN(d)) return "";
-  const dayOfYear = Math.floor((d - new Date(d.getFullYear(), 0, 0)) / 86400000);
-  const fraction = Math.floor((dayOfYear / 365) * 1000)
-    .toString()
-    .padStart(3, "0");
+function toImperialDate(session) {
+  if (!session || isNaN(session)) return "";
+  const fraction = session.toString().padStart(3, "0");
   const millennium = 42;
   const accuracy = 3;
   return `${accuracy}.${fraction}.M${millennium}`;
-}
-
-function getEraLabel(imperialCode) {
-  if (!imperialCode) return "Undated Record";
-  const parts = imperialCode.split(".");
-  const frac = parseInt(parts[1] || "0", 10);
-  if (frac < 250) return "Early 42nd Millennium";
-  if (frac < 500) return "Mid 42nd Millennium";
-  if (frac < 750) return "Late 42nd Millennium";
-  return "End of the 42nd Millennium";
 }
 
 // ---------- Main Component ----------
 export default function Timeline() {
   const [events, setEvents] = useState([]);
   const [selectedMillennium, setSelectedMillennium] = useState(42);
+  const [selectedSession, setSelectedSession] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [editingEvent, setEditingEvent] = useState(null);
   const [form, setForm] = useState({
@@ -58,20 +45,11 @@ export default function Timeline() {
   // ------------------- FORM LOGIC -------------------
   const toggleForm = (eventToEdit = null) => {
     if (eventToEdit) {
-      let safeDate = "";
-      const rawDate = eventToEdit.event_session;
-      // Clean anything invalid, like "+042027-06"
-      if (rawDate && typeof rawDate === "string") {
-        if (!rawDate.startsWith("+") && !isNaN(Date.parse(rawDate))) {
-          safeDate = new Date(rawDate).toISOString().slice(0, 10);
-        }
-      }
-
       setEditingEvent(eventToEdit);
       setForm({
         title: eventToEdit.title || "",
         description: eventToEdit.description || "",
-        event_session: safeDate, // cleaned or blank
+        event_session: eventToEdit.event_session || "",
         imperial_code: eventToEdit.imperial_code || "",
         related_character: eventToEdit.related_character || "",
         related_campaign: eventToEdit.related_campaign || "",
@@ -94,22 +72,36 @@ export default function Timeline() {
 
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
+  const handleDelete = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this event?")) return;
+
+    try {
+      const res = await fetch(`${API_URL}api/timeline/${id}`, {
+        method: "DELETE",
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        console.error("Failed to delete:", data);
+        alert(`Failed to delete event: ${data.error || res.statusText}`);
+        return;
+      }
+
+      // Refresh list
+      setEvents((prev) => prev.filter((e) => e.id !== id));
+    } catch (err) {
+      console.error("Error deleting event:", err);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // --- Sanitize event_session properly ---
-    let cleanDate = null;
-    if (form.event_session && !isNaN(Date.parse(form.event_session))) {
-      // Valid ISO date → keep YYYY-MM-DD
-      cleanDate = new Date(form.event_session).toISOString().slice(0, 10);
-    } else {
-      cleanDate = null;
-    }
+    const event_session = form.event_session
+      ? parseInt(form.event_session)
+      : null;
 
-    // --- Generate proper imperial code ---
-    const imperial_code = form.imperial_code.trim() || toImperialDate(cleanDate);
-
-    // --- Convert foreign keys safely ---
+    const imperial_code = form.imperial_code.trim() || toImperialDate(event_session);
     const related_character = form.related_character
       ? parseInt(form.related_character)
       : null;
@@ -120,14 +112,12 @@ export default function Timeline() {
     const payload = {
       title: form.title.trim(),
       description: form.description.trim(),
-      event_session: cleanDate,
+      event_session,
       imperial_code,
       related_character,
       related_campaign,
       source_file: form.source_file || "Custom",
     };
-
-    console.log("Submitting payload:", payload);
 
     try {
       const url = editingEvent
@@ -167,42 +157,53 @@ export default function Timeline() {
     setShowForm(false);
   };
 
-  // ------------------- GROUPING -------------------
+  // ------------------- GROUPING & FILTER -------------------
+  const sessions = [...new Set(events.map((ev) => ev.event_session))].sort(
+    (a, b) => a - b
+  );
+
   const filteredEvents = events
     .filter(
       (ev) =>
-        ev.millennium === selectedMillennium ||
-        (ev.imperial_code && ev.imperial_code.includes(`M${selectedMillennium}`))
+        (selectedMillennium === 42 &&
+          (!selectedSession || ev.event_session === selectedSession))
     )
-    .sort((a, b) => {
-      const getFrac = (code) => {
-        if (!code) return 0;
-        const parts = code.split(".");
-        return parseInt(parts[1] || "0", 10);
-      };
-      return getFrac(a.imperial_code) - getFrac(b.imperial_code);
-    });
-
-  // Group events by Era Label
-  const groupedEvents = filteredEvents.reduce((acc, ev) => {
-    const imperial = ev.imperial_code || toImperialDate(ev.event_session);
-    const era = getEraLabel(imperial);
-    if (!acc[era]) acc[era] = [];
-    acc[era].push(ev);
-    return acc;
-  }, {});
+    .sort((a, b) => (a.event_session || 0) - (b.event_session || 0));
 
   // ------------------- RENDER -------------------
   return (
     <div className="page-container">
       <h1 className="page-title">Imperial Chronology — 42nd Millennium</h1>
 
+      {/* ---------- CONTROLS ---------- */}
       <div style={{ textAlign: "center", marginBottom: "1rem" }}>
         <button onClick={() => toggleForm()} className="modern-btn">
           {showForm ? "Close Form" : "Add Event"}
         </button>
       </div>
 
+      {/* ---------- SESSION FILTER ---------- */}
+      <div className="session-filter" style={{ textAlign: "center", marginBottom: "1rem" }}>
+        <label htmlFor="sessionSelect"><strong>Filter by Session:</strong> </label>
+        <select
+          id="sessionSelect"
+          value={selectedSession || ""}
+          onChange={(e) =>
+            setSelectedSession(e.target.value ? parseInt(e.target.value) : null)
+          }
+          className="modern-input"
+          style={{ width: "200px", marginLeft: "0.5rem" }}
+        >
+          <option value="">All Sessions</option>
+          {sessions.map((session) => (
+            <option key={session} value={session}>
+              Session {session}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {/* ---------- FORM ---------- */}
       {showForm && (
         <form onSubmit={handleSubmit} className="timeline-form fade-in">
           <h2>{editingEvent ? "Update Event" : "Add New Event"}</h2>
@@ -216,9 +217,9 @@ export default function Timeline() {
             required
           />
           <input
-            type="integer"
+            type="number"
             name="event_session"
-            placeholder="Sesion #"
+            placeholder="Session #"
             value={form.event_session}
             onChange={handleChange}
             className="modern-input"
@@ -274,69 +275,64 @@ export default function Timeline() {
       )}
 
       {/* ---------- TIMELINE VIEW ---------- */}
-      <div className="timeline-years-container">
-        <div className="timeline-years">
-          <div
-            className={`timeline-year active`}
-            onClick={() => setSelectedMillennium(42)}
-          >
-            <span>M{selectedMillennium}</span>
-            <span className="year-count">{filteredEvents.length}</span>
-          </div>
-        </div>
-      </div>
-
-      {/* ---------- EVENT GROUPS ---------- */}
       <div className="month-view">
         <h2 className="month-title">
-          Records of the {selectedMillennium}th Millennium
+          {selectedSession
+            ? `Session ${selectedSession} — Recorded Events`
+            : `All Recorded Sessions of the ${selectedMillennium}th Millennium`}
         </h2>
 
-        {Object.keys(groupedEvents).length === 0 ? (
-          <p className="no-events">No recorded events in M{selectedMillennium}</p>
+        {filteredEvents.length === 0 ? (
+          <p className="no-events">
+            No recorded events for this selection.
+          </p>
         ) : (
-          Object.entries(groupedEvents).map(([era, evList], eraIndex) => (
-            <div key={era} className="era-section fade-in">
-              <h3 className="era-heading">{era}</h3>
-              {evList.map((ev, i) => {
-                const imperial = ev.imperial_code || toImperialDate(ev.event_session);
-                return (
-                  <div
-                    key={ev.id}
-                    className={`event-card ${i % 2 === 0 ? "alt" : ""}`}
-                  >
-                    <div className="event-header">
-                      <span className="imperial-badge">{imperial}</span>
-                    </div>
-                    <h4 className="event-title">{ev.title}</h4>
-                    <p className="event-desc">
-                      {ev.description || "No description available."}
+          filteredEvents.map((ev, i) => {
+            const imperial = ev.imperial_code || toImperialDate(ev.event_session);
+            return (
+              <div
+                key={ev.id}
+                className={`event-card ${i % 2 === 0 ? "alt" : ""}`}
+              >
+                <div className="event-header">
+                  <span className="imperial-badge">{imperial}</span>
+                  {ev.event_session && (
+                    <span className="session-tag">Session {ev.event_session}</span>
+                  )}
+                </div>
+                <h4 className="event-title">{ev.title}</h4>
+                <p className="event-desc">
+                  {ev.description || "No description available."}
+                </p>
+                <div className="event-meta">
+                  {ev.character_name && (
+                    <p>
+                      <strong>Character:</strong> {ev.character_name}
                     </p>
-                    <div className="event-meta">
-                      {ev.character_name && (
-                        <p>
-                          <strong>Character:</strong> {ev.character_name}
-                        </p>
-                      )}
-                      {ev.campaign_title && (
-                        <p>
-                          <strong>Campaign:</strong> {ev.campaign_title}
-                        </p>
-                      )}
-                    </div>
-                    <div style={{ textAlign: "right", marginTop: "0.5rem" }}>
-                      <button
-                        onClick={() => toggleForm(ev)}
-                        className="modern-btn small-btn"
-                      >
-                        Edit
-                      </button>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          ))
+                  )}
+                  {ev.campaign_title && (
+                    <p>
+                      <strong>Campaign:</strong> {ev.campaign_title}
+                    </p>
+                  )}
+                </div>
+                <div style={{ textAlign: "right", marginTop: "0.5rem" }}>
+                  <button
+                    onClick={() => toggleForm(ev)}
+                    className="modern-btn small-btn"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => handleDelete(ev.id)}
+                    className="modern-btn small-btn cancel-btn"
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+            );
+          })
         )}
       </div>
     </div>

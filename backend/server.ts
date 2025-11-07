@@ -1552,6 +1552,17 @@ app.get("/api/timeline", async (req: Request, res: Response) => {
   }
 });
 
+app.delete("/api/timeline/:id", async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    await db.query("DELETE FROM timeline_events WHERE id = $1", [id]);
+    res.json({ message: "Event deleted" });
+  } catch (err) {
+    console.error("Error deleting event:", err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
 app.get("/api/timeline/:id", async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
