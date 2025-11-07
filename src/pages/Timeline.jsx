@@ -34,11 +34,13 @@ export default function Timeline() {
       try {
         const [evRes, chRes] = await Promise.all([
           fetch(`${API_URL}api/timeline`),
-          fetch(`${API_URL}api/characters`)
+          fetch(`${API_URL}api/characters`),
         ]);
-        const [evData, chData] = await Promise.all([evRes.json(), chRes.json()]);
+        const [evData, chData] = await Promise.all([
+          evRes.json(),
+          chRes.json(),
+        ]);
         setEvents(evData);
-        // Only main importance = 1
         setCharacters(chData);
       } catch (err) {
         console.error("Error fetching data:", err);
@@ -80,17 +82,14 @@ export default function Timeline() {
   const handleChange = (e) =>
     setForm({ ...form, [e.target.name]: e.target.value });
 
-  const handleMultiSelect = (e) => {
-    const selected = Array.from(e.target.selectedOptions).map(o => parseInt(o.value));
-    setForm({ ...form, additional_characters: selected });
-  };
-
   const handleDelete = async (id) => {
     if (!window.confirm("Are you sure you want to delete this event?")) return;
     try {
-      const res = await fetch(`${API_URL}api/timeline/${id}`, { method: "DELETE" });
+      const res = await fetch(`${API_URL}api/timeline/${id}`, {
+        method: "DELETE",
+      });
       if (!res.ok) return alert("Failed to delete event.");
-      setEvents(prev => prev.filter(e => e.id !== id));
+      setEvents((prev) => prev.filter((e) => e.id !== id));
     } catch (err) {
       console.error("Error deleting event:", err);
     }
@@ -98,8 +97,11 @@ export default function Timeline() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const event_session = form.event_session ? parseInt(form.event_session) : null;
-    const imperial_code = form.imperial_code.trim() || toImperialDate(event_session);
+    const event_session = form.event_session
+      ? parseInt(form.event_session)
+      : null;
+    const imperial_code =
+      form.imperial_code.trim() || toImperialDate(event_session);
     const related_character = form.related_character
       ? parseInt(form.related_character)
       : null;
@@ -139,7 +141,9 @@ export default function Timeline() {
   };
 
   // ------------------- FILTER -------------------
-  const sessions = [...new Set(events.map((ev) => ev.event_session))].sort((a, b) => a - b);
+  const sessions = [...new Set(events.map((ev) => ev.event_session))].sort(
+    (a, b) => a - b
+  );
   const filteredEvents = events
     .filter((ev) => !selectedSession || ev.event_session === selectedSession)
     .sort((a, b) => (a.event_session || 0) - (b.event_session || 0));
@@ -155,8 +159,13 @@ export default function Timeline() {
         </button>
       </div>
 
-      <div className="session-filter" style={{ textAlign: "center", marginBottom: "1rem" }}>
-        <label><strong>Filter by Session:</strong> </label>
+      <div
+        className="session-filter"
+        style={{ textAlign: "center", marginBottom: "1rem" }}
+      >
+        <label>
+          <strong>Filter by Session:</strong>{" "}
+        </label>
         <select
           value={selectedSession || ""}
           onChange={(e) =>
@@ -210,7 +219,9 @@ export default function Timeline() {
             className="modern-input"
             rows="3"
           />
-          <label><strong>Main Character:</strong></label>
+          <label>
+            <strong>Journal Entry (Main Character):</strong>
+          </label>
           <select
             name="related_character"
             value={form.related_character}
@@ -227,20 +238,6 @@ export default function Timeline() {
               ))}
           </select>
 
-          <label><strong>Additional Characters:</strong></label>
-          <select
-            multiple
-            value={form.additional_characters}
-            onChange={handleMultiSelect}
-            className="modern-input"
-          >
-            {characters.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-              </option>
-            ))}
-          </select>
-
           <input
             type="text"
             name="related_campaign"
@@ -248,6 +245,7 @@ export default function Timeline() {
             disabled
             className="modern-input"
           />
+
           <div style={{ marginTop: "1rem" }}>
             <button type="submit" className="modern-btn">
               {editingEvent ? "Save Changes" : "Submit Event"}
@@ -272,21 +270,39 @@ export default function Timeline() {
             ? `Session ${selectedSession} — Recorded Events`
             : `All Recorded Sessions of the ${selectedMillennium}th Millennium`}
         </h2>
+
         {filteredEvents.length === 0 ? (
           <p className="no-events">No recorded events for this selection.</p>
         ) : (
           filteredEvents.map((ev, i) => {
-            const imperial = ev.imperial_code || toImperialDate(ev.event_session);
+            const imperial =
+              ev.imperial_code || toImperialDate(ev.event_session);
+            const author = ev.character_name
+              ? ev.character_name
+              : "Unknown";
             return (
-              <div key={ev.id} className={`event-card ${i % 2 === 0 ? "alt" : ""}`}>
+              <div
+                key={ev.id}
+                className={`event-card ${i % 2 === 0 ? "alt" : ""}`}
+              >
                 <div className="event-header">
                   <span className="imperial-badge">{imperial}</span>
-                  <span className="session-tag">Session {ev.event_session}</span>
+                  <span className="session-tag">
+                    Session {ev.event_session}
+                  </span>
                 </div>
                 <h4 className="event-title">{ev.title}</h4>
                 <p className="event-desc">{ev.description}</p>
+
+                <p className="event-meta">
+                  <strong>Entered By:</strong> {author}
+                </p>
+
                 <div style={{ textAlign: "right", marginTop: "0.5rem" }}>
-                  <button onClick={() => toggleForm(ev)} className="modern-btn small-btn">
+                  <button
+                    onClick={() => toggleForm(ev)}
+                    className="modern-btn small-btn"
+                  >
                     Edit
                   </button>
                   <button
