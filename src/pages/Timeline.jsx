@@ -34,7 +34,7 @@ export default function Timeline() {
   const [form, setForm] = useState({
     title: "",
     description: "",
-    event_date: "",
+    event_session: "",
     imperial_code: "",
     related_character: "",
     related_campaign: "",
@@ -59,7 +59,7 @@ export default function Timeline() {
   const toggleForm = (eventToEdit = null) => {
     if (eventToEdit) {
       let safeDate = "";
-      const rawDate = eventToEdit.event_date;
+      const rawDate = eventToEdit.event_session;
       // Clean anything invalid, like "+042027-06"
       if (rawDate && typeof rawDate === "string") {
         if (!rawDate.startsWith("+") && !isNaN(Date.parse(rawDate))) {
@@ -71,7 +71,7 @@ export default function Timeline() {
       setForm({
         title: eventToEdit.title || "",
         description: eventToEdit.description || "",
-        event_date: safeDate, // cleaned or blank
+        event_session: safeDate, // cleaned or blank
         imperial_code: eventToEdit.imperial_code || "",
         related_character: eventToEdit.related_character || "",
         related_campaign: eventToEdit.related_campaign || "",
@@ -82,7 +82,7 @@ export default function Timeline() {
       setForm({
         title: "",
         description: "",
-        event_date: "",
+        event_session: "",
         imperial_code: "",
         related_character: "",
         related_campaign: "",
@@ -97,11 +97,11 @@ export default function Timeline() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // --- Sanitize event_date properly ---
+    // --- Sanitize event_session properly ---
     let cleanDate = null;
-    if (form.event_date && !isNaN(Date.parse(form.event_date))) {
+    if (form.event_session && !isNaN(Date.parse(form.event_session))) {
       // Valid ISO date → keep YYYY-MM-DD
-      cleanDate = new Date(form.event_date).toISOString().slice(0, 10);
+      cleanDate = new Date(form.event_session).toISOString().slice(0, 10);
     } else {
       cleanDate = null;
     }
@@ -120,7 +120,7 @@ export default function Timeline() {
     const payload = {
       title: form.title.trim(),
       description: form.description.trim(),
-      event_date: cleanDate,
+      event_session: cleanDate,
       imperial_code,
       related_character,
       related_campaign,
@@ -185,7 +185,7 @@ export default function Timeline() {
 
   // Group events by Era Label
   const groupedEvents = filteredEvents.reduce((acc, ev) => {
-    const imperial = ev.imperial_code || toImperialDate(ev.event_date);
+    const imperial = ev.imperial_code || toImperialDate(ev.event_session);
     const era = getEraLabel(imperial);
     if (!acc[era]) acc[era] = [];
     acc[era].push(ev);
@@ -216,9 +216,10 @@ export default function Timeline() {
             required
           />
           <input
-            type="date"
-            name="event_date"
-            value={form.event_date}
+            type="integer"
+            name="event_session"
+            placeholder="Sesion #"
+            value={form.event_session}
             onChange={handleChange}
             className="modern-input"
           />
@@ -298,7 +299,7 @@ export default function Timeline() {
             <div key={era} className="era-section fade-in">
               <h3 className="era-heading">{era}</h3>
               {evList.map((ev, i) => {
-                const imperial = ev.imperial_code || toImperialDate(ev.event_date);
+                const imperial = ev.imperial_code || toImperialDate(ev.event_session);
                 return (
                   <div
                     key={ev.id}

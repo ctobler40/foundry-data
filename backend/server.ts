@@ -1543,7 +1543,7 @@ app.get("/api/timeline", async (req: Request, res: Response) => {
       FROM timeline_events t
       LEFT JOIN characters c ON t.related_character = c.id
       LEFT JOIN campaign ca ON t.related_campaign = ca.id
-      ORDER BY millennium ASC, imperial_code ASC, event_date ASC, t.id ASC;
+      ORDER BY millennium ASC, imperial_code ASC, event_session ASC, t.id ASC;
     `);
     res.json(rows);
   } catch (err) {
@@ -1589,7 +1589,7 @@ app.post("/api/timeline", async (req: Request, res: Response) => {
     let {
       title,
       description,
-      event_date,
+      event_session,
       imperial_code,
       related_character,
       related_campaign,
@@ -1601,18 +1601,18 @@ app.post("/api/timeline", async (req: Request, res: Response) => {
     related_campaign = related_campaign || null;
 
     // Auto-generate Imperial Code + Millennium if not provided
-    const code = imperial_code?.trim() || generateImperialCode(event_date);
+    const code = imperial_code?.trim() || generateImperialCode(event_session);
     const millennium = 42; // Fixed for current era
 
     const { rows } = await db.query(
       `INSERT INTO timeline_events 
-       (title, description, event_date, imperial_code, millennium, related_character, related_campaign, source_file)
+       (title, description, event_session, imperial_code, millennium, related_character, related_campaign, source_file)
        VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
        RETURNING *`,
       [
         title,
         description,
-        event_date,
+        event_session,
         code,
         millennium,
         related_character,
@@ -1634,7 +1634,7 @@ app.put("/api/timeline/:id", async (req: Request, res: Response) => {
     let {
       title,
       description,
-      event_date,
+      event_session,
       imperial_code,
       related_character,
       related_campaign,
@@ -1646,7 +1646,7 @@ app.put("/api/timeline/:id", async (req: Request, res: Response) => {
     related_campaign = related_campaign || null;
 
     // Default Imperial code generation
-    const code = imperial_code?.trim() || generateImperialCode(event_date);
+    const code = imperial_code?.trim() || generateImperialCode(event_session);
     const millennium = 42;
 
     const { rows } = await db.query(
@@ -1654,7 +1654,7 @@ app.put("/api/timeline/:id", async (req: Request, res: Response) => {
        SET 
          title = $1,
          description = $2,
-         event_date = $3,
+         event_session = $3,
          imperial_code = $4,
          millennium = $5,
          related_character = $6,
@@ -1665,7 +1665,7 @@ app.put("/api/timeline/:id", async (req: Request, res: Response) => {
       [
         title,
         description,
-        event_date || null,
+        event_session || null,
         code,
         millennium,
         related_character,

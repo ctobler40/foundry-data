@@ -246,7 +246,7 @@ CREATE TABLE timeline_events (
   id SERIAL PRIMARY KEY,
   title TEXT NOT NULL,
   description TEXT,
-  event_date DATE,
+  event_session INTEGER,
   imperial_code TEXT,
   millennium INTEGER,
   related_character INTEGER REFERENCES characters(id) ON DELETE SET NULL,
@@ -254,4 +254,3 @@ CREATE TABLE timeline_events (
   source_file VARCHAR(150) DEFAULT 'Custom',
   created_at TIMESTAMP DEFAULT NOW()
 );
-
