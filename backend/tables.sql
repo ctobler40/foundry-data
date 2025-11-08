@@ -249,6 +249,7 @@ CREATE TABLE timeline_events (
   event_session INTEGER,
   imperial_code TEXT,
   millennium INTEGER,
+  related_planet INTEGER REFERENCES campaign_planets(id) ON DELETE SET NULL,
   related_character INTEGER REFERENCES characters(id) ON DELETE SET NULL,
   related_campaign INTEGER REFERENCES campaign(id) ON DELETE SET NULL,
   source_file VARCHAR(150) DEFAULT 'Custom',

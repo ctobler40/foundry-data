@@ -1539,10 +1539,12 @@ app.get("/api/timeline", async (req: Request, res: Response) => {
       SELECT 
         t.*, 
         c.name AS character_name, 
-        ca.title AS campaign_title
+        ca.title AS campaign_title,
+        cp.name AS planet_name
       FROM timeline_events t
       LEFT JOIN characters c ON t.related_character = c.id
       LEFT JOIN campaign ca ON t.related_campaign = ca.id
+      LEFT JOIN campaign_planets cp ON t.related_planet = cp.id
       ORDER BY millennium ASC, imperial_code ASC, event_session ASC, t.id ASC;
     `);
     res.json(rows);
@@ -1566,10 +1568,18 @@ app.delete("/api/timeline/:id", async (req: Request, res: Response) => {
 app.get("/api/timeline/:id", async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { rows } = await db.query(
-      "SELECT * FROM timeline_events WHERE id = $1",
-      [id]
-    );
+    const { rows } = await db.query(`
+      SELECT 
+        t.*, 
+        c.name AS character_name, 
+        ca.title AS campaign_title,
+        cp.name AS planet_name
+      FROM timeline_events t
+      LEFT JOIN characters c ON t.related_character = c.id
+      LEFT JOIN campaign ca ON t.related_campaign = ca.id
+      LEFT JOIN campaign_planets cp ON t.related_planet = cp.id
+      WHERE t.id = $1;
+    `, [id]);
     if (rows.length === 0)
       return res.status(404).json({ error: "Event not found" });
     res.json(rows[0]);
@@ -1595,13 +1605,14 @@ function generateImperialCode(event_date?: string): string {
   return `${accuracy}.${fraction}.M${millennium}`;
 }
 
-app.post("/api/timeline", async (req, res) => {
+app.post("/api/timeline", async (req: Request, res: Response) => {
   try {
     let {
       title,
       description,
       event_session,
       imperial_code,
+      related_planet,
       related_character,
       related_campaign,
       additional_characters,
@@ -1609,14 +1620,15 @@ app.post("/api/timeline", async (req, res) => {
     } = req.body;
 
     related_character = related_character || null;
-    related_campaign = 1; // Always Chalnath Expanse
+    related_planet = related_planet || null;
+    related_campaign = 1; // default to Chalnath Expanse
     const code = imperial_code?.trim() || "";
     const millennium = 42;
 
     const { rows } = await db.query(
       `INSERT INTO timeline_events 
-       (title, description, event_session, imperial_code, millennium, related_character, related_campaign, additional_characters, source_file)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
+       (title, description, event_session, imperial_code, millennium, related_planet, related_character, related_campaign, additional_characters, source_file)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
        RETURNING *`,
       [
         title,
@@ -1624,6 +1636,7 @@ app.post("/api/timeline", async (req, res) => {
         event_session,
         code,
         millennium,
+        related_planet,
         related_character,
         related_campaign,
         additional_characters || [],
@@ -1637,7 +1650,7 @@ app.post("/api/timeline", async (req, res) => {
   }
 });
 
-app.put("/api/timeline/:id", async (req, res) => {
+app.put("/api/timeline/:id", async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     let {
@@ -1645,6 +1658,7 @@ app.put("/api/timeline/:id", async (req, res) => {
       description,
       event_session,
       imperial_code,
+      related_planet,
       related_character,
       related_campaign,
       additional_characters,
@@ -1652,15 +1666,17 @@ app.put("/api/timeline/:id", async (req, res) => {
     } = req.body;
 
     related_character = related_character || null;
-    related_campaign = 1; // Always Chalnath Expanse
+    related_planet = related_planet || null;
+    related_campaign = 1; // default to Chalnath Expanse
     const code = imperial_code?.trim() || "";
     const millennium = 42;
 
     const { rows } = await db.query(
       `UPDATE timeline_events
        SET title=$1, description=$2, event_session=$3, imperial_code=$4, millennium=$5,
-           related_character=$6, related_campaign=$7, additional_characters=$8, source_file=$9
-       WHERE id=$10
+           related_planet=$6, related_character=$7, related_campaign=$8,
+           additional_characters=$9, source_file=$10
+       WHERE id=$11
        RETURNING *`,
       [
         title,
@@ -1668,6 +1684,7 @@ app.put("/api/timeline/:id", async (req, res) => {
         event_session,
         code,
         millennium,
+        related_planet,
         related_character,
         related_campaign,
         additional_characters || [],
@@ -1675,7 +1692,8 @@ app.put("/api/timeline/:id", async (req, res) => {
         id,
       ]
     );
-    if (rows.length === 0) return res.status(404).json({ error: "Event not found" });
+    if (rows.length === 0)
+      return res.status(404).json({ error: "Event not found" });
     res.json(rows[0]);
   } catch (err) {
     console.error("Error updating event:", err);
@@ -1683,6 +1701,34 @@ app.put("/api/timeline/:id", async (req, res) => {
   }
 });
 
+app.get("/api/timeline/search", async (req: Request, res: Response) => {
+  try {
+    const { keyword } = req.query;
+    if (!keyword || typeof keyword !== "string") {
+      return res.status(400).json({ error: "Keyword query parameter is required." });
+    }
+
+    const { rows } = await db.query(
+      `
+      SELECT 
+        t.*, 
+        c.name AS character_name, 
+        ca.title AS campaign_title
+      FROM timeline_events t
+      LEFT JOIN characters c ON t.related_character = c.id
+      LEFT JOIN campaign ca ON t.related_campaign = ca.id
+      WHERE LOWER(t.description) LIKE LOWER($1)
+      ORDER BY millennium ASC, imperial_code ASC, event_session ASC, t.id ASC;
+      `,
+      [`%${keyword}%`]
+    );
+
+    res.json(rows);
+  } catch (err) {
+    console.error("Error searching timeline events:", err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
 
 app.delete("/api/timeline/:id", async (req: Request, res: Response) => {
   try {

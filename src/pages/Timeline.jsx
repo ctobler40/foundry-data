@@ -28,6 +28,28 @@ export default function Timeline() {
     source_file: "Custom",
   });
 
+  // ------------------- SEARCH -------------------
+  const [searchKeyword, setSearchKeyword] = useState("");
+  const [searchResults, setSearchResults] = useState(null);
+
+  const handleSearch = async (e) => {
+    e.preventDefault();
+    if (!searchKeyword.trim()) {
+      setSearchResults(null);
+      return;
+    }
+    try {
+      const res = await fetch(
+        `${API_URL}api/timeline/search?keyword=${encodeURIComponent(searchKeyword)}`
+      );
+      if (!res.ok) throw new Error("Search failed");
+      const data = await res.json();
+      setSearchResults(data);
+    } catch (err) {
+      console.error("Error searching events:", err);
+    }
+  };
+
   // ------------------- FETCH -------------------
   useEffect(() => {
     const fetchAll = async () => {
@@ -183,6 +205,38 @@ export default function Timeline() {
         </select>
       </div>
 
+      {/* ------------------- SEARCH BAR ------------------- */}
+      <div style={{ textAlign: "center", marginBottom: "1rem" }}>
+        <form
+          onSubmit={handleSearch}
+          style={{ display: "inline-flex", gap: "0.5rem" }}
+        >
+          <input
+            type="text"
+            placeholder="Search by keyword..."
+            value={searchKeyword}
+            onChange={(e) => setSearchKeyword(e.target.value)}
+            className="modern-input"
+            style={{ width: "250px" }}
+          />
+          <button type="submit" className="modern-btn">
+            Search
+          </button>
+          {searchResults && (
+            <button
+              type="button"
+              className="modern-btn cancel-btn"
+              onClick={() => {
+                setSearchKeyword("");
+                setSearchResults(null);
+              }}
+            >
+              Clear
+            </button>
+          )}
+        </form>
+      </div>
+
       {showForm && (
         <form onSubmit={handleSubmit} className="timeline-form fade-in">
           <h2>{editingEvent ? "Update Event" : "Add New Event"}</h2>
@@ -266,20 +320,19 @@ export default function Timeline() {
 
       <div className="month-view">
         <h2 className="month-title">
-          {selectedSession
+          {searchResults
+            ? `Search Results for "${searchKeyword}"`
+            : selectedSession
             ? `Session ${selectedSession} — Recorded Events`
             : `All Recorded Sessions of the ${selectedMillennium}th Millennium`}
         </h2>
 
-        {filteredEvents.length === 0 ? (
-          <p className="no-events">No recorded events for this selection.</p>
+        {(searchResults ? searchResults : filteredEvents).length === 0 ? (
+          <p className="no-events">No recorded events found.</p>
         ) : (
-          filteredEvents.map((ev, i) => {
-            const imperial =
-              ev.imperial_code || toImperialDate(ev.event_session);
-            const author = ev.character_name
-              ? ev.character_name
-              : "Unknown";
+          (searchResults ? searchResults : filteredEvents).map((ev, i) => {
+            const imperial = ev.imperial_code || toImperialDate(ev.event_session);
+            const author = ev.character_name || "Unknown";
             return (
               <div
                 key={ev.id}
@@ -287,17 +340,13 @@ export default function Timeline() {
               >
                 <div className="event-header">
                   <span className="imperial-badge">{imperial}</span>
-                  <span className="session-tag">
-                    Session {ev.event_session}
-                  </span>
+                  <span className="session-tag">Session {ev.event_session}</span>
                 </div>
                 <h4 className="event-title">{ev.title}</h4>
                 <p className="event-desc">{ev.description}</p>
-
                 <p className="event-meta">
                   <strong>Entered By:</strong> {author}
                 </p>
-
                 <div style={{ textAlign: "right", marginTop: "0.5rem" }}>
                   <button
                     onClick={() => toggleForm(ev)}
