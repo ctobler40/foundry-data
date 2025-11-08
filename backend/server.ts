@@ -1741,6 +1741,57 @@ app.delete("/api/timeline/:id", async (req: Request, res: Response) => {
   }
 });
 
+// Get all sessions (joined with planet + campaign)
+app.get("/api/sessions", async (req, res) => {
+  try {
+    const { rows } = await db.query(`
+      SELECT s.*, p.name AS planet_name, c.title AS campaign_title
+      FROM session_details s
+      LEFT JOIN campaign_planets p ON s.planet_id = p.id
+      LEFT JOIN campaign c ON s.campaign_id = c.id
+      ORDER BY s.session_number ASC;
+    `);
+    res.json(rows);
+  } catch (err) {
+    console.error("Error fetching sessions:", err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// Get single session with timeline + logs
+app.get("/api/sessions/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { rows: session } = await db.query(`
+      SELECT s.*, p.name AS planet_name, c.title AS campaign_title
+      FROM session_details s
+      LEFT JOIN campaign_planets p ON s.planet_id = p.id
+      LEFT JOIN campaign c ON s.campaign_id = c.id
+      WHERE s.id = $1;
+    `, [id]);
+
+    if (session.length === 0) return res.status(404).json({ error: "Session not found" });
+
+    const { rows: logs } = await db.query(
+      `SELECT l.*, ch.name AS author_name FROM session_logs l
+       LEFT JOIN characters ch ON l.author_id = ch.id
+       WHERE l.session_id = $1 ORDER BY l.timestamp ASC`,
+      [id]
+    );
+
+    const { rows: events } = await db.query(
+      `SELECT * FROM timeline_events WHERE session_id = $1 ORDER BY imperial_code ASC`,
+      [id]
+    );
+
+    res.json({ ...session[0], logs, events });
+  } catch (err) {
+    console.error("Error fetching session:", err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+
 // ----------------------------------------
 // 🚀 Server Start
 // ----------------------------------------

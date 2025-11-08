@@ -252,6 +252,28 @@ CREATE TABLE timeline_events (
   related_planet INTEGER REFERENCES campaign_planets(id) ON DELETE SET NULL,
   related_character INTEGER REFERENCES characters(id) ON DELETE SET NULL,
   related_campaign INTEGER REFERENCES campaign(id) ON DELETE SET NULL,
+  session_id INTEGER REFERENCES session_details(id) ON DELETE SET NULL,
   source_file VARCHAR(150) DEFAULT 'Custom',
   created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE session_details (
+  id SERIAL PRIMARY KEY,
+  campaign_id INTEGER REFERENCES campaign(id) ON DELETE CASCADE,
+  planet_id INTEGER REFERENCES campaign_planets(id) ON DELETE SET NULL,
+  session_number INTEGER NOT NULL,
+  title TEXT NOT NULL,
+  summary TEXT,
+  gm_notes TEXT,
+  relationships_gained TEXT[],
+  relationships_lost TEXT[],
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE session_logs (
+  id SERIAL PRIMARY KEY,
+  session_id INTEGER REFERENCES session_details(id) ON DELETE CASCADE,
+  author_id INTEGER REFERENCES characters(id) ON DELETE SET NULL,
+  log_entry TEXT NOT NULL,
+  timestamp TIMESTAMP DEFAULT NOW()
 );

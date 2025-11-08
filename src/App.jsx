@@ -17,7 +17,7 @@ import Campaign from "./pages/Campaign";
 import RegroupActions from "./pages/RegroupActions";
 import Archives from "./pages/Archives";
 import Ascensions from "./pages/Ascensions";
-import Timeline from "./pages/Timeline";
+import Timeline from "./pages/timeline/Timeline";
 
 import Kalidonia from "./pages/ChalnathLocations/Kalidonia";
 import Haephos from "./pages/ChalnathLocations/Haephos";
