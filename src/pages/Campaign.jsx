@@ -138,7 +138,7 @@ function Campaign({ campaign, planets }) {
             {planets.map((planet) => (
               <Link
                 key={planet.id}
-                to={`/campaign/${planet.name.toLowerCase()}`}
+                to={`/timeline/planet/${planet.id}`}
                 style={{ textDecoration: "none", color: "#fff" }}
               >
                 <div

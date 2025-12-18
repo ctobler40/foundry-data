@@ -17,7 +17,11 @@ import Campaign from "./pages/Campaign";
 import RegroupActions from "./pages/RegroupActions";
 import Archives from "./pages/Archives";
 import Ascensions from "./pages/Ascensions";
+
 import Timeline from "./pages/timeline/Timeline";
+import TimelineMap from "./pages/timeline/TimelineMap";
+import PlanetView from "./pages/timeline/PlanetView";
+import SessionView from "./pages/timeline/SessionView";
 
 import Kalidonia from "./pages/ChalnathLocations/Kalidonia";
 import Haephos from "./pages/ChalnathLocations/Haephos";
@@ -152,6 +156,9 @@ function App() {
 
             {/* ----- Archives & Reference Pages ----- */}
             <Route path="/timeline" element={<Timeline />} />
+            <Route path="/timeline/map" element={<TimelineMap />} />
+            <Route path="/timeline/planet/:id" element={<PlanetView />} />
+            <Route path="/timeline/session/:id" element={<SessionView />} />
             <Route path="/archives" element={<Archives />} />
             <Route path="/regroup-actions" element={<RegroupActions />} />
             <Route path="/ascensions" element={<Ascensions />} />

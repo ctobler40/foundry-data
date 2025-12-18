@@ -28,7 +28,7 @@ function Navbar() {
           Archives
         </Link>
 
-        <Link to="/timeline" className="navbar-subtitle">
+        <Link to="/timeline/map" className="navbar-subtitle">
           Timeline
         </Link>
 
