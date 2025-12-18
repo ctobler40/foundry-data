@@ -1775,12 +1775,12 @@ app.get("/api/sessions/:id", async (req, res) => {
     const { rows: logs } = await db.query(
       `SELECT l.*, ch.name AS author_name FROM session_logs l
        LEFT JOIN characters ch ON l.author_id = ch.id
-       WHERE l.session_id = $1 ORDER BY l.timestamp ASC`,
+       WHERE l.event_session = $1 ORDER BY l.timestamp ASC`,
       [id]
     );
 
     const { rows: events } = await db.query(
-      `SELECT * FROM timeline_events WHERE session_id = $1 ORDER BY imperial_code ASC`,
+      `SELECT * FROM timeline_events WHERE event_session = $1 ORDER BY imperial_code ASC`,
       [id]
     );
 

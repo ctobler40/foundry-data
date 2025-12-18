@@ -39,7 +39,7 @@ export default function PlanetView() {
         const planetSessionIds = [
           ...new Set(
             planetEvents
-              .map((e) => e.session_id)
+              .map((e) => e.event_session)
               .filter((sid) => sid !== null && sid !== undefined)
           ),
         ];
@@ -63,7 +63,7 @@ export default function PlanetView() {
   const eventsBySession = useMemo(() => {
     const m = new Map();
     for (const ev of events) {
-      const key = ev.session_id || ev.event_session || "unslotted";
+      const key = ev.event_session || "unslotted";
       if (!m.has(key)) m.set(key, []);
       m.get(key).push(ev);
     }
