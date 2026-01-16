@@ -72,9 +72,10 @@ app.post("/api/upload/image", upload.single("image"), async (req: Request, res: 
       height: result.height,
       format: result.format,
     });
-  } catch (err) {
-    console.error("Cloudinary upload error:", err);
-    res.status(500).json({ error: "Upload failed" });
+  } catch (err: any) {
+    console.error("Cloudinary upload error:", err?.message || err);
+    console.error(err);
+    res.status(500).json({ error: "Upload failed", details: err?.message || String(err) });
   }
 });
 
