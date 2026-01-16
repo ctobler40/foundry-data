@@ -72,40 +72,44 @@ body,
   transform: translateY(-1px);
 }
 
+
 .modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.65);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 999;
+  background: rgba(0, 0, 0, 0.72);
+  backdrop-filter: blur(6px);
 }
 
 .modal-content {
-  background: #1e1e1e;
-  color: #fff;
-  padding: 2rem;
-  border-radius: 10px;
-  max-width: 600px;
-  width: 90%;
-  position: relative;
-  box-shadow: 0 0 15px rgba(255, 255, 255, 0.2);
-  font-family: "Roboto", sans-serif;
+  /* deeper, cleaner panel */
+  background: radial-gradient(circle at 20% 10%, rgba(0, 210, 255, 0.10), transparent 40%),
+              linear-gradient(180deg, #0f1522 0%, #0b101a 100%);
+  border: 1px solid rgba(0, 210, 255, 0.18);
+  border-radius: 16px;
+  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.65),
+              0 0 28px rgba(0, 210, 255, 0.10);
+  max-width: 780px; /* wider like your screenshot */
+  width: min(92vw, 780px);
+  padding: 1.6rem 1.7rem;
 }
 
 .close-btn {
-  position: absolute;
-  top: 10px;
+  top: 14px;
   right: 14px;
-  font-size: 1.5rem;
-  background: none;
-  color: #fff;
-  border: none;
-  cursor: pointer;
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  font-size: 1.3rem;
+  color: #cfefff;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(0, 210, 255, 0.15);
+  transition: transform 0.12s ease, background 0.2s ease, border-color 0.2s ease;
+}
+
+.close-btn:hover {
+  background: rgba(0, 210, 255, 0.08);
+  border-color: rgba(0, 210, 255, 0.35);
+  transform: scale(1.04);
 }
 
 .home-container {
@@ -1061,14 +1065,103 @@ textarea.modern-input {
   font-size: 1rem;
 }
 
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 1.2rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* cancel button to match theme */
+.modal-actions .cancel-btn {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #c7c7c7;
+}
+
+.modal-actions .cancel-btn:hover {
+  background: rgba(255, 255, 255, 0.10);
+  color: #fff;
+}
+
+/* primary button slightly punchier */
+.modal-actions .modern-btn {
+  box-shadow: 0 0 18px rgba(0, 210, 255, 0.18);
+}
+
+.modal-actions .modern-btn:hover {
+  box-shadow: 0 0 26px rgba(0, 210, 255, 0.28);
+  transform: translateY(-1px);
+}
+
 textarea.modern-input:focus {
   border-color: #00d2ff;
   outline: none;
   box-shadow: 0 0 6px rgba(0, 210, 255, 0.4);
 }
 
+/* title spacing */
+.modal-content h2,
 .modal-content h3 {
+  margin: 0 0 1rem 0;
   color: #00d2ff;
+  letter-spacing: 0.4px;
+}
+
+/* labels (if you use <label> tags) */
+.modal-content label {
+  display: block;
+  margin: 0.85rem 0 0.35rem;
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: #9fd3ff;
+}
+
+/* nice 2-col row for Session# + Campaign Title
+   (wrap those two inputs in a div with className="modal-grid" if you aren’t already) */
+.modal-grid {
+  display: grid;
+  grid-template-columns: 1fr 1.6fr;
+  gap: 1rem;
+}
+
+@media (max-width: 620px) {
+  .modal-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* inputs inside modal */
+.modal-content .modern-input,
+.modal-content input,
+.modal-content textarea {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(159, 211, 255, 0.18);
+  color: #eaf6ff;
+  border-radius: 10px;
+  padding: 0.7rem 0.85rem;
+}
+
+.modal-content .modern-input::placeholder,
+.modal-content input::placeholder,
+.modal-content textarea::placeholder {
+  color: rgba(170, 170, 170, 0.75);
+}
+
+.modal-content .modern-input:focus,
+.modal-content input:focus,
+.modal-content textarea:focus {
+  outline: none;
+  border-color: rgba(0, 210, 255, 0.55);
+  box-shadow: 0 0 0 3px rgba(0, 210, 255, 0.14);
+}
+
+/* textarea comfort */
+.modal-content textarea {
+  min-height: 140px;
+  resize: vertical;
 }
 
 .pdf-link {

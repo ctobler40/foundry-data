@@ -56,8 +56,20 @@ function Archives() {
           </div>
 
           <div className="feature-card">
-            <h3>Lore Index</h3>
-            <p>(Coming soon) Dive into the lore and data entries gathered from your campaigns.</p>
+            <h3>Abilities</h3>
+            <p>(Coming soon) Discover Psyker powers, Faith abilities, and faction-specific boons.</p>
+            <span className="coming-soon">Coming Soon</span>
+          </div>
+
+          <div className="feature-card">
+            <h3>Abilities</h3>
+            <p>(Coming soon) Discover Psyker powers, Faith abilities, and faction-specific boons.</p>
+            <span className="coming-soon">Coming Soon</span>
+          </div>
+
+          <div className="feature-card">
+            <h3>Abilities</h3>
+            <p>(Coming soon) Discover Psyker powers, Faith abilities, and faction-specific boons.</p>
             <span className="coming-soon">Coming Soon</span>
           </div>
         </div>

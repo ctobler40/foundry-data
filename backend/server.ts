@@ -988,6 +988,392 @@ app.delete("/api/combatReferences/:id", async (req: Request, res: Response) => {
     res.status(500).json({ error: "Internal Server Error" });
   }
 });
+
+// ============================================================================
+// SESSIONS ROUTES (session_details) — CRUD
+// ============================================================================
+
+// Get all sessions (joined with planet + campaign)
+app.get("/api/sessions", async (req: Request, res: Response) => {
+  try {
+    const { rows } = await db.query(`
+      SELECT s.*, p.name AS planet_name, c.title AS campaign_title
+      FROM session_details s
+      LEFT JOIN campaign_planets p ON s.planet_id = p.id
+      LEFT JOIN campaign c ON s.campaign_id = c.id
+      ORDER BY s.session_number ASC;
+    `);
+    res.json(rows);
+  } catch (err) {
+    console.error("Error fetching sessions:", err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// Get single session with timeline + logs
+app.get("/api/sessions/:id", async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    const { rows: session } = await db.query(
+      `
+      SELECT s.*, p.name AS planet_name, c.title AS campaign_title
+      FROM session_details s
+      LEFT JOIN campaign_planets p ON s.planet_id = p.id
+      LEFT JOIN campaign c ON s.campaign_id = c.id
+      WHERE s.id = $1;
+      `,
+      [id]
+    );
+
+    if (session.length === 0) return res.status(404).json({ error: "Session not found" });
+
+    const { rows: logs } = await db.query(
+      `
+      SELECT l.*, ch.name AS author_name
+      FROM session_logs l
+      LEFT JOIN characters ch ON l.author_id = ch.id
+      WHERE l.event_session = $1
+      ORDER BY l.timestamp ASC
+      `,
+      [id]
+    );
+
+    const { rows: events } = await db.query(
+      `SELECT * FROM timeline_events WHERE event_session = $1 ORDER BY imperial_code ASC`,
+      [id]
+    );
+
+    res.json({ ...session[0], logs, events });
+  } catch (err) {
+    console.error("Error fetching session:", err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// ----------------------------
+// CREATE session
+// Matches PlanetView.jsx POST /api/sessions
+// Body: { session_number, title, summary, campaign_title?, logs? }
+// ----------------------------
+app.post("/api/sessions", async (req: Request, res: Response) => {
+  try {
+    const { session_number, title, summary, logs } = req.body;
+
+    // Optional defaults (tweak if you want per-planet sessions later)
+    const campaign_id = 1; // "Chalnath Expanse"
+    const planet_id = null; // set if you add planet selection in the UI
+
+    if (!Number.isFinite(Number(session_number)) || Number(session_number) <= 0) {
+      return res.status(400).json({ error: "session_number must be a positive number" });
+    }
+    if (!String(title || "").trim()) {
+      return res.status(400).json({ error: "title is required" });
+    }
+
+    const { rows } = await db.query(
+      `
+      INSERT INTO session_details (session_number, title, summary, campaign_id, planet_id, logs)
+      VALUES ($1, $2, $3, $4, $5, $6)
+      RETURNING *;
+      `,
+      [
+        Number(session_number),
+        String(title).trim(),
+        summary?.trim?.() ? String(summary).trim() : null,
+        campaign_id,
+        planet_id,
+        Array.isArray(logs) ? logs : [],
+      ]
+    );
+
+    // Return the joined shape (so the UI has campaign_title/planet_name if needed)
+    const newId = rows[0].id;
+    const { rows: joined } = await db.query(
+      `
+      SELECT s.*, p.name AS planet_name, c.title AS campaign_title
+      FROM session_details s
+      LEFT JOIN campaign_planets p ON s.planet_id = p.id
+      LEFT JOIN campaign c ON s.campaign_id = c.id
+      WHERE s.id = $1;
+      `,
+      [newId]
+    );
+
+    res.status(201).json(joined[0] ?? rows[0]);
+  } catch (err: any) {
+    console.error("Error creating session:", err);
+
+    // If you have a UNIQUE(session_number), this will be a nice message.
+    if (err?.code === "23505") {
+      return res.status(409).json({ error: "A session with that session_number already exists." });
+    }
+
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// ----------------------------
+// UPDATE session
+// Matches PlanetView.jsx PUT /api/sessions/:id
+// ----------------------------
+app.put("/api/sessions/:id", async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { session_number, title, summary, logs } = req.body;
+
+    if (!Number.isFinite(Number(session_number)) || Number(session_number) <= 0) {
+      return res.status(400).json({ error: "session_number must be a positive number" });
+    }
+    if (!String(title || "").trim()) {
+      return res.status(400).json({ error: "title is required" });
+    }
+
+    const { rows } = await db.query(
+      `
+      UPDATE session_details
+      SET session_number = $1,
+          title = $2,
+          summary = $3,
+          logs = $4
+      WHERE id = $5
+      RETURNING *;
+      `,
+      [
+        Number(session_number),
+        String(title).trim(),
+        summary?.trim?.() ? String(summary).trim() : null,
+        Array.isArray(logs) ? logs : [],
+        id,
+      ]
+    );
+
+    if (rows.length === 0) return res.status(404).json({ error: "Session not found" });
+
+    const { rows: joined } = await db.query(
+      `
+      SELECT s.*, p.name AS planet_name, c.title AS campaign_title
+      FROM session_details s
+      LEFT JOIN campaign_planets p ON s.planet_id = p.id
+      LEFT JOIN campaign c ON s.campaign_id = c.id
+      WHERE s.id = $1;
+      `,
+      [id]
+    );
+
+    res.json(joined[0] ?? rows[0]);
+  } catch (err: any) {
+    console.error("Error updating session:", err);
+
+    if (err?.code === "23505") {
+      return res.status(409).json({ error: "A session with that session_number already exists." });
+    }
+
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// Update a planet (details, population, exports, environment)
+app.put("/api/campaign/planets/:id", async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { details, population, exports, environment } = req.body;
+
+    const { rows } = await db.query(
+      `
+      UPDATE campaign_planets
+      SET details = $1,
+          population = $2,
+          exports = $3,
+          environment = $4
+      WHERE id = $5
+      RETURNING *;
+      `,
+      [
+        details ?? null,
+        population ?? null,
+        exports ?? null,
+        environment ?? null,
+        id,
+      ]
+    );
+
+    if (rows.length === 0) {
+      return res.status(404).json({ error: "Planet not found" });
+    }
+
+    res.json(rows[0]);
+  } catch (err) {
+    console.error("Error updating planet:", err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// ============================================================================
+// CAMPAIGN FACTIONS — CRUD
+// Table: campaign_factions
+// id, campaign_id, planet_id, name, description, territory, exports, status
+// ============================================================================
+
+// Get single faction by ID
+app.get("/api/campaign/factions/:id", async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { rows } = await db.query(
+      "SELECT * FROM campaign_factions WHERE id = $1",
+      [id]
+    );
+    if (rows.length === 0) return res.status(404).json({ error: "Faction not found" });
+    res.json(rows[0]);
+  } catch (err) {
+    console.error("Error fetching faction:", err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// Create faction
+app.post("/api/campaign/factions", async (req: Request, res: Response) => {
+  try {
+    const {
+      campaign_id,
+      planet_id,
+      name,
+      description,
+      territory,
+      exports,
+      status,
+    } = req.body;
+
+    if (!String(name || "").trim()) {
+      return res.status(400).json({ error: "name is required" });
+    }
+
+    const { rows } = await db.query(
+      `
+      INSERT INTO campaign_factions
+        (campaign_id, planet_id, name, description, territory, exports, status)
+      VALUES
+        ($1,$2,$3,$4,$5,$6,$7)
+      RETURNING *;
+      `,
+      [
+        campaign_id ?? 1,              // default to your main campaign
+        planet_id ?? null,             // allow null if needed
+        String(name).trim(),
+        description ?? null,
+        territory ?? null,
+        exports ?? null,
+        status ?? null,
+      ]
+    );
+
+    res.status(201).json(rows[0]);
+  } catch (err) {
+    console.error("Error creating faction:", err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// Update faction
+app.put("/api/campaign/factions/:id", async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    const {
+      campaign_id,
+      planet_id,
+      name,
+      description,
+      territory,
+      exports,
+      status,
+    } = req.body;
+
+    if (!String(name || "").trim()) {
+      return res.status(400).json({ error: "name is required" });
+    }
+
+    const { rows } = await db.query(
+      `
+      UPDATE campaign_factions
+      SET campaign_id = $1,
+          planet_id   = $2,
+          name        = $3,
+          description = $4,
+          territory   = $5,
+          exports     = $6,
+          status      = $7
+      WHERE id = $8
+      RETURNING *;
+      `,
+      [
+        campaign_id ?? 1,
+        planet_id ?? null,
+        String(name).trim(),
+        description ?? null,
+        territory ?? null,
+        exports ?? null,
+        status ?? null,
+        id,
+      ]
+    );
+
+    if (rows.length === 0) return res.status(404).json({ error: "Faction not found" });
+    res.json(rows[0]);
+  } catch (err) {
+    console.error("Error updating faction:", err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// Delete faction
+app.delete("/api/campaign/factions/:id", async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { rowCount } = await db.query(
+      "DELETE FROM campaign_factions WHERE id = $1",
+      [id]
+    );
+    if (!rowCount) return res.status(404).json({ error: "Faction not found" });
+    res.json({ message: "Faction deleted" });
+  } catch (err) {
+    console.error("Error deleting faction:", err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// ----------------------------
+// DELETE session
+// Matches PlanetView.jsx DELETE /api/sessions/:id
+// Safety: blocks deletion if timeline_events still reference it.
+// (Remove the guard if you prefer ON DELETE CASCADE, etc.)
+// ----------------------------
+app.delete("/api/sessions/:id", async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    const { rows: refs } = await db.query(
+      `SELECT COUNT(*)::int AS cnt FROM timeline_events WHERE event_session = $1`,
+      [id]
+    );
+
+    if ((refs[0]?.cnt ?? 0) > 0) {
+      return res.status(409).json({
+        error:
+          "Cannot delete session: timeline_events still reference it. Reassign or delete those events first.",
+      });
+    }
+
+    const { rowCount } = await db.query(`DELETE FROM session_details WHERE id = $1`, [id]);
+    if (!rowCount) return res.status(404).json({ error: "Session not found" });
+
+    res.json({ message: "Session deleted" });
+  } catch (err) {
+    console.error("Error deleting session:", err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
 // ============================================================================
 // CRITICAL HITS ROUTES
 // ============================================================================
