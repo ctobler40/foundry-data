@@ -150,6 +150,47 @@ app.get("/api/characters", async (req: Request, res: Response) => {
   }
 });
 
+app.post("/api/characters", async (req: Request, res: Response) => {
+  try {
+    const {
+      name,
+      description,
+      characterImportance,
+      status,
+      causeOfDeath,
+      iconhtml,      // frontend-friendly
+      iconHTML,      // optional if you still send this
+    } = req.body;
+
+    const iconToSave = iconhtml ?? iconHTML ?? null;
+
+    const { rows } = await db.query(
+      `INSERT INTO characters (name, description, characterimportance, status, causeofdeath, iconhtml)
+       VALUES ($1, $2, $3, $4, $5, $6)
+       RETURNING id`,
+      [name, description || null, characterImportance || null, status || null, causeOfDeath || null, iconToSave]
+    );
+
+    const newId = rows[0].id;
+
+    const { rows: joined } = await db.query(
+      `
+      SELECT c.*, ci.importance AS importance_label, cs.status AS status_label
+      FROM characters c
+      LEFT JOIN characterimportance ci ON c.characterimportance = ci.id
+      LEFT JOIN characterstatus cs ON c.status = cs.id
+      WHERE c.id = $1;
+      `,
+      [newId]
+    );
+
+    res.status(201).json(joined[0]);
+  } catch (err) {
+    console.error("Error creating character:", err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
 // Get character by ID
 app.get("/api/characters/:id", async (req: Request, res: Response) => {
   try {

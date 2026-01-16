@@ -14,6 +14,16 @@ function Characters() {
   const [importanceOptions, setImportanceOptions] = useState([]);
   const [statusOptions, setStatusOptions] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
+  const [showCreate, setShowCreate] = useState(false);
+
+  const emptyEditData = {
+    name: "",
+    description: "",
+    characterImportance: "",
+    status: "",
+    causeOfDeath: "",
+    iconhtml: "",
+  };
 
   const [editData, setEditData] = useState({
     name: "",
@@ -155,6 +165,37 @@ function Characters() {
     return acc;
   }, {});
 
+  const handleCreateCharacter = async () => {
+    try {
+      const payload = {
+        name: editData.name,
+        description: editData.description,
+        characterImportance: editData.characterImportance || null,
+        status: editData.status || null,
+        causeOfDeath: editData.causeOfDeath || null,
+        iconhtml: editData.iconhtml || null,
+      };
+
+      const res = await fetch(`${API_URL}api/characters`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) return;
+
+      const created = await res.json();
+
+      // put newest at top, or sort by id; your call
+      setCharacters((prev) => [...prev, created].sort((a, b) => a.id - b.id));
+
+      setShowCreate(false);
+      setEditData({ ...emptyEditData });
+    } catch (err) {
+      console.error("Error creating character:", err);
+    }
+  };
+
   return (
     <div className="characters-container" style={{ textAlign: "center" }}>
       <section className="hero-section">
@@ -162,6 +203,20 @@ function Characters() {
         <p className="hero-subtitle">
           Records of those who fought, survived, or vanished in the Chalnath Expanse campaign.
         </p>
+
+        <div style={{ marginTop: "1rem", display: "flex", justifyContent: "center", gap: "1rem" }}>
+          <button
+            className="modern-btn"
+            onClick={() => {
+              setEditData({ ...emptyEditData });
+              setSelectedChar(null);
+              setShowCreate(true);
+            }}
+            style={{ background: "linear-gradient(90deg, #1e90ff, #00d2ff)", fontWeight: 600 }}
+          >
+            + New Character
+          </button>
+        </div>
 
         <div style={{ marginTop: "1.5rem" }}>
           <input
@@ -238,6 +293,118 @@ function Characters() {
             ) : (
               <p>No character selected.</p>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* --- Character Create Modal --- */}
+      {showCreate && (
+        <div className="modal-overlay">
+          <div className="modal-content" style={{
+            background: "linear-gradient(180deg, #1b1b1b 0%, #121212 100%)",
+            border: "1px solid #2b2b2b",
+            boxShadow: "0 0 15px rgba(0, 210, 255, 0.2)",
+            color: "#fff",
+            padding: "2rem",
+            borderRadius: "12px",
+            maxWidth: "640px",
+            width: "90%",
+            fontFamily: "Roboto, sans-serif",
+          }}>
+            <h2 style={{ textAlign: "center", color: "#00d2ff", marginBottom: "1.5rem" }}>
+              Create New Character
+            </h2>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+              <label style={{ color: "#9fd3ff", fontWeight: "600" }}>Name</label>
+              <input
+                type="text"
+                className="modern-input"
+                value={editData.name}
+                onChange={(e) => setEditData({ ...editData, name: e.target.value })}
+              />
+
+              <label style={{ color: "#9fd3ff", fontWeight: "600" }}>Description</label>
+              <textarea
+                className="modern-input"
+                rows="3"
+                value={editData.description}
+                onChange={(e) => setEditData({ ...editData, description: e.target.value })}
+                style={{ resize: "vertical" }}
+              />
+
+              <label style={{ color: "#9fd3ff", fontWeight: "600" }}>Importance</label>
+              <select
+                className="modern-input"
+                value={editData.characterImportance}
+                onChange={(e) => setEditData({ ...editData, characterImportance: e.target.value })}
+              >
+                <option value="">Select importance</option>
+                {importanceOptions.map((opt) => (
+                  <option key={opt.id} value={opt.id}>{opt.importance}</option>
+                ))}
+              </select>
+
+              <label style={{ color: "#9fd3ff", fontWeight: "600" }}>Status</label>
+              <select
+                className="modern-input"
+                value={editData.status}
+                onChange={(e) => setEditData({ ...editData, status: e.target.value })}
+              >
+                <option value="">Select status</option>
+                {statusOptions.map((opt) => (
+                  <option key={opt.id} value={opt.id}>{opt.status}</option>
+                ))}
+              </select>
+
+              <label style={{ color: "#9fd3ff", fontWeight: "600" }}>Cause of Death</label>
+              <input
+                type="text"
+                className="modern-input"
+                value={editData.causeOfDeath}
+                onChange={(e) => setEditData({ ...editData, causeOfDeath: e.target.value })}
+              />
+
+              <label style={{ color: "#9fd3ff", fontWeight: "600" }}>Icon URL</label>
+              <input
+                type="text"
+                className="modern-input"
+                placeholder="https://example.com/icon.png"
+                value={editData.iconhtml || ""}
+                onChange={(e) => setEditData({ ...editData, iconhtml: e.target.value })}
+              />
+            </div>
+
+            <div style={{ display: "flex", justifyContent: "center", gap: "1.5rem", marginTop: "2rem" }}>
+              <button
+                className="modern-btn"
+                onClick={handleCreateCharacter}
+                style={{
+                  background: "linear-gradient(90deg, #1e90ff, #00d2ff)",
+                  fontWeight: "600",
+                  boxShadow: "0 0 12px rgba(0, 210, 255, 0.3)",
+                  padding: "0.75rem 2rem",
+                }}
+              >
+                Create
+              </button>
+
+              <button
+                className="modern-btn"
+                onClick={() => {
+                  setShowCreate(false);
+                  setEditData({ ...emptyEditData });
+                }}
+                style={{
+                  background: "linear-gradient(90deg, #cc0000, #880000)",
+                  fontWeight: "600",
+                  padding: "0.75rem 2rem",
+                  boxShadow: "0 0 10px rgba(255, 0, 0, 0.2)",
+                }}
+              >
+                Cancel
+              </button>
+            </div>
           </div>
         </div>
       )}
