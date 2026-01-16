@@ -6,6 +6,109 @@ import Haephos from "../ChalnathLocations/Haephos";
 
 const API_URL = process.env.REACT_APP_API_URL || "http://localhost:6500/";
 
+  // ---------------- Modal + Form (styled like your screenshot) ----------------
+  // ---- stable components (DO NOT define inside PlanetView) ----
+function ModalShell({ title, children, onClose, formError }) {
+  return (
+    <div
+      className="modal-overlay"
+      style={overlayStyle}
+      onMouseDown={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div style={modalStyle}>
+        <div style={modalHeader}>
+          <div>
+            <h3 style={modalTitle}>{title}</h3>
+          </div>
+
+          <button
+            type="button"
+            aria-label="Close"
+            onClick={onClose}
+            style={closeBtn}
+            onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.08)")}
+            onMouseLeave={(e) => (e.currentTarget.style.background = "rgba(0,0,0,0.15)")}
+          >
+            ✕
+          </button>
+        </div>
+
+        {formError && <div style={errorBox}>{formError}</div>}
+
+        <div style={{ padding: "1rem" }}>{children}</div>
+      </div>
+    </div>
+  );
+}
+
+function SessionForm({ form, setForm, onSubmit, submitLabel, closeModals, saving }) {
+  return (
+    <div style={{ display: "grid", gap: "0.9rem" }}>
+      <div style={twoCol}>
+        <div style={field}>
+          <label style={labelStyle}>Session #</label>
+          <input
+            value={form.session_number}
+            onChange={(e) => setForm((p) => ({ ...p, session_number: e.target.value }))}
+            placeholder="e.g. 12"
+            style={inputStyle}
+            onFocus={(e) => (e.currentTarget.style.borderColor = "rgba(0,210,255,0.55)")}
+            onBlur={(e) => (e.currentTarget.style.borderColor = "rgba(255,255,255,0.10)")}
+          />
+        </div>
+
+        <div style={field}>
+          <label style={labelStyle}>Campaign Title</label>
+          <input
+            value={form.campaign_title}
+            onChange={(e) => setForm((p) => ({ ...p, campaign_title: e.target.value }))}
+            placeholder="Chalnath Expanse"
+            style={inputStyle}
+            onFocus={(e) => (e.currentTarget.style.borderColor = "rgba(0,210,255,0.55)")}
+            onBlur={(e) => (e.currentTarget.style.borderColor = "rgba(255,255,255,0.10)")}
+          />
+        </div>
+      </div>
+
+      <div style={field}>
+        <label style={labelStyle}>Title</label>
+        <input
+          value={form.title}
+          onChange={(e) => setForm((p) => ({ ...p, title: e.target.value }))}
+          placeholder="Session title"
+          style={inputStyle}
+          onFocus={(e) => (e.currentTarget.style.borderColor = "rgba(0,210,255,0.55)")}
+          onBlur={(e) => (e.currentTarget.style.borderColor = "rgba(255,255,255,0.10)")}
+        />
+      </div>
+
+      <div style={field}>
+        <label style={labelStyle}>Summary</label>
+        <textarea
+          value={form.summary}
+          onChange={(e) => setForm((p) => ({ ...p, summary: e.target.value }))}
+          placeholder="Short summary (optional)"
+          rows={6}
+          style={textareaStyle}
+          onFocus={(e) => (e.currentTarget.style.borderColor = "rgba(0,210,255,0.55)")}
+          onBlur={(e) => (e.currentTarget.style.borderColor = "rgba(255,255,255,0.10)")}
+        />
+      </div>
+
+      <div style={actionsRow}>
+        <button onClick={closeModals} disabled={saving} style={cancelBtn}>
+          Cancel
+        </button>
+        <button onClick={onSubmit} disabled={saving} style={confirmBtn}>
+          {saving ? "Saving..." : submitLabel}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function PlanetView() {
   const { id } = useParams(); // planet id
   const navigate = useNavigate();
@@ -217,114 +320,6 @@ export default function PlanetView() {
       setSaving(false);
     }
   };
-
-  // ---------------- Modal + Form (styled like your screenshot) ----------------
-  const ModalShell = ({ title, children, onClose }) => (
-    <div
-      className="modal-overlay"
-      style={overlayStyle}
-      onMouseDown={(e) => {
-        if (e.target === e.currentTarget) onClose();
-      }}
-    >
-      <div style={modalStyle}>
-        <div style={modalHeader}>
-          <div>
-            <h3 style={modalTitle}>{title}</h3>
-          </div>
-
-          <button
-            type="button"
-            aria-label="Close"
-            onClick={onClose}
-            style={closeBtn}
-            onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.08)")}
-            onMouseLeave={(e) => (e.currentTarget.style.background = "rgba(0,0,0,0.15)")}
-          >
-            ✕
-          </button>
-        </div>
-
-        {formError && (
-          <div style={errorBox}>
-            {formError}
-          </div>
-        )}
-
-        <div style={{ padding: "1rem" }}>{children}</div>
-      </div>
-    </div>
-  );
-
-  const SessionForm = ({ onSubmit, submitLabel }) => (
-    <div style={{ display: "grid", gap: "0.9rem" }}>
-      <div style={twoCol}>
-        <div style={field}>
-          <label style={labelStyle}>Session #</label>
-          <input
-            value={form.session_number}
-            onChange={(e) =>
-              setForm((p) => ({ ...p, session_number: e.target.value }))
-            }
-            placeholder="e.g. 12"
-            style={inputStyle}
-            onFocus={(e) => (e.currentTarget.style.borderColor = "rgba(0,210,255,0.55)")}
-            onBlur={(e) => (e.currentTarget.style.borderColor = "rgba(255,255,255,0.10)")}
-          />
-        </div>
-
-        <div style={field}>
-          <label style={labelStyle}>Campaign Title</label>
-          <input
-            value={form.campaign_title}
-            onChange={(e) =>
-              setForm((p) => ({ ...p, campaign_title: e.target.value }))
-            }
-            placeholder="Chalnath Expanse"
-            style={inputStyle}
-            onFocus={(e) => (e.currentTarget.style.borderColor = "rgba(0,210,255,0.55)")}
-            onBlur={(e) => (e.currentTarget.style.borderColor = "rgba(255,255,255,0.10)")}
-          />
-        </div>
-      </div>
-
-      <div style={field}>
-        <label style={labelStyle}>Title</label>
-        <input
-          value={form.title}
-          onChange={(e) => setForm((p) => ({ ...p, title: e.target.value }))}
-          placeholder="Session title"
-          style={inputStyle}
-          onFocus={(e) => (e.currentTarget.style.borderColor = "rgba(0,210,255,0.55)")}
-          onBlur={(e) => (e.currentTarget.style.borderColor = "rgba(255,255,255,0.10)")}
-        />
-      </div>
-
-      <div style={field}>
-        <label style={labelStyle}>Summary</label>
-        <textarea
-          value={form.summary}
-          onChange={(e) =>
-            setForm((p) => ({ ...p, summary: e.target.value }))
-          }
-          placeholder="Short summary (optional)"
-          rows={6}
-          style={textareaStyle}
-          onFocus={(e) => (e.currentTarget.style.borderColor = "rgba(0,210,255,0.55)")}
-          onBlur={(e) => (e.currentTarget.style.borderColor = "rgba(255,255,255,0.10)")}
-        />
-      </div>
-
-      <div style={actionsRow}>
-        <button onClick={closeModals} disabled={saving} style={cancelBtn}>
-          Cancel
-        </button>
-        <button onClick={onSubmit} disabled={saving} style={confirmBtn}>
-          {saving ? "Saving..." : submitLabel}
-        </button>
-      </div>
-    </div>
-  );
 
   return (
     <>
@@ -539,22 +534,36 @@ export default function PlanetView() {
           <div />
         ))}
 
-      {/* ---------------- ADD MODAL ---------------- */}
       {showAdd && (
-        <ModalShell title="Add Session" onClose={closeModals}>
-          <SessionForm onSubmit={createSession} submitLabel="Create Session" />
-        </ModalShell>
-      )}
+  <ModalShell title="Add Session" onClose={closeModals} formError={formError}>
+    <SessionForm
+      form={form}
+      setForm={setForm}
+      onSubmit={createSession}
+      submitLabel="Create Session"
+      closeModals={closeModals}
+      saving={saving}
+    />
+  </ModalShell>
+)}
 
-      {/* ---------------- EDIT MODAL ---------------- */}
-      {editingSession && (
-        <ModalShell
-          title={`Update Session ${editingSession.session_number ?? ""}`}
-          onClose={closeModals}
-        >
-          <SessionForm onSubmit={updateSession} submitLabel="Save Changes" />
-        </ModalShell>
-      )}
+{editingSession && (
+  <ModalShell
+    title={`Update Session ${editingSession.session_number ?? ""}`}
+    onClose={closeModals}
+    formError={formError}
+  >
+    <SessionForm
+      form={form}
+      setForm={setForm}
+      onSubmit={updateSession}
+      submitLabel="Save Changes"
+      closeModals={closeModals}
+      saving={saving}
+    />
+  </ModalShell>
+)}
+
 
       {/* ---------------- DELETE MODAL ---------------- */}
       {deletingSession && (
