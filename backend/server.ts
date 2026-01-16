@@ -10,6 +10,11 @@ import { cloudinary } from "./cloudinary";
 
 dotenv.config();
 
+const required = ["CLOUDINARY_CLOUD_NAME", "CLOUDINARY_API_KEY", "CLOUDINARY_API_SECRET"];
+for (const k of required) {
+  if (!process.env[k]) console.warn(`Missing env var: ${k}`);
+}
+
 const upload = multer({ storage: multer.memoryStorage() });
 const app = express();
 const httpServer = createServer(app);
@@ -274,21 +279,44 @@ app.post("/api/characters", async (req: Request, res: Response) => {
   }
 });
 
-// Update character
 app.put("/api/characters/:id", async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { name, description, characterImportance, status, causeOfDeath, iconHTML } = req.body;
+
+    const {
+      name,
+      description,
+      characterImportance,
+      status,
+      causeOfDeath,
+      iconhtml,
+      iconHTML,
+    } = req.body;
+
+    const iconToSave = iconhtml ?? iconHTML ?? null;
+
     const { rows } = await db.query(
       `UPDATE characters
-       SET name = $1, description = $2, characterImportance = $3, status = $4,
-           causeOfDeath = $5, iconHTML = $6
+       SET name = COALESCE($1, name),
+           description = COALESCE($2, description),
+           characterImportance = COALESCE($3, characterImportance),
+           status = COALESCE($4, status),
+           causeOfDeath = COALESCE($5, causeOfDeath),
+           iconhtml = COALESCE($6, iconhtml)
        WHERE id = $7
        RETURNING *`,
-      [name, description, characterImportance, status, causeOfDeath, iconHTML, id]
+      [
+        name ?? null,
+        description ?? null,
+        characterImportance ?? null,
+        status ?? null,
+        causeOfDeath ?? null,
+        iconToSave,
+        id,
+      ]
     );
-    if (rows.length === 0)
-      return res.status(404).json({ error: "Character not found" });
+
+    if (rows.length === 0) return res.status(404).json({ error: "Character not found" });
     res.json(rows[0]);
   } catch (err) {
     console.error("Error updating character:", err);
