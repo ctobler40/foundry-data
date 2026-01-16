@@ -43,9 +43,18 @@ function ModalShell({ title, children, onClose, formError }) {
   );
 }
 
-function SessionForm({ form, setForm, onSubmit, submitLabel, closeModals, saving }) {
+function SessionForm({ form, setForm, onSubmit, submitLabel, closeModals, saving, planets }) {
+  // helpers: textarea <-> array
+  const toLines = (arr) => (Array.isArray(arr) ? arr.join("\n") : "");
+  const fromLines = (txt) =>
+    String(txt || "")
+      .split("\n")
+      .map((s) => s.trim())
+      .filter(Boolean);
+
   return (
     <div style={{ display: "grid", gap: "0.9rem" }}>
+      {/* Row 1 */}
       <div style={twoCol}>
         <div style={field}>
           <label style={labelStyle}>Session #</label>
@@ -72,18 +81,56 @@ function SessionForm({ form, setForm, onSubmit, submitLabel, closeModals, saving
         </div>
       </div>
 
-      <div style={field}>
-        <label style={labelStyle}>Title</label>
-        <input
-          value={form.title}
-          onChange={(e) => setForm((p) => ({ ...p, title: e.target.value }))}
-          placeholder="Session title"
-          style={inputStyle}
-          onFocus={(e) => (e.currentTarget.style.borderColor = "rgba(0,210,255,0.55)")}
-          onBlur={(e) => (e.currentTarget.style.borderColor = "rgba(255,255,255,0.10)")}
-        />
+      {/* Row 2 */}
+      <div style={twoCol}>
+        <div style={field}>
+          <label style={labelStyle}>Planet</label>
+
+          <select
+            value={form.planet_id ?? ""}
+            onChange={(e) =>
+              setForm((p) => ({
+                ...p,
+                planet_id: e.target.value === "" ? "" : Number(e.target.value),
+              }))
+            }
+            style={{
+              ...inputStyle,
+              width: "95%",
+              appearance: "none",
+              cursor: "pointer",
+            }}
+            onFocus={(e) => (e.currentTarget.style.borderColor = "rgba(0,210,255,0.55)")}
+            onBlur={(e) => (e.currentTarget.style.borderColor = "rgba(255,255,255,0.10)")}
+          >
+            <option value="">(No planet)</option>
+            {planets.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.name}
+              </option>
+            ))}
+          </select>
+
+          <div style={{ color: "#6f8ca3", fontSize: "0.82rem", marginTop: "0.2rem" }}>
+            Saved as <code>planet_id</code>
+          </div>
+        </div>
+
+
+        <div style={field}>
+          <label style={labelStyle}>Title</label>
+          <input
+            value={form.title}
+            onChange={(e) => setForm((p) => ({ ...p, title: e.target.value }))}
+            placeholder="Session title"
+            style={inputStyle}
+            onFocus={(e) => (e.currentTarget.style.borderColor = "rgba(0,210,255,0.55)")}
+            onBlur={(e) => (e.currentTarget.style.borderColor = "rgba(255,255,255,0.10)")}
+          />
+        </div>
       </div>
 
+      {/* Summary */}
       <div style={field}>
         <label style={labelStyle}>Summary</label>
         <textarea
@@ -97,6 +144,54 @@ function SessionForm({ form, setForm, onSubmit, submitLabel, closeModals, saving
         />
       </div>
 
+      {/* Logs */}
+      <div style={field}>
+        <label style={labelStyle}>Logs (one per line)</label>
+        <textarea
+          value={toLines(form.logs)}
+          onChange={(e) => setForm((p) => ({ ...p, logs: fromLines(e.target.value) }))}
+          placeholder={"Example:\n- Met Kroot smuggler\n- Fought cultists in undercity"}
+          rows={6}
+          style={textareaStyle}
+          onFocus={(e) => (e.currentTarget.style.borderColor = "rgba(0,210,255,0.55)")}
+          onBlur={(e) => (e.currentTarget.style.borderColor = "rgba(255,255,255,0.10)")}
+        />
+      </div>
+
+      {/* Relationships */}
+      <div style={twoCol}>
+        <div style={field}>
+          <label style={labelStyle}>Relationships Gained (one per line)</label>
+          <textarea
+            value={toLines(form.relationships_gained)}
+            onChange={(e) =>
+              setForm((p) => ({ ...p, relationships_gained: fromLines(e.target.value) }))
+            }
+            placeholder={"Example:\nMedved\nBlack Briars"}
+            rows={6}
+            style={textareaStyle}
+            onFocus={(e) => (e.currentTarget.style.borderColor = "rgba(0,210,255,0.55)")}
+            onBlur={(e) => (e.currentTarget.style.borderColor = "rgba(255,255,255,0.10)")}
+          />
+        </div>
+
+        <div style={field}>
+          <label style={labelStyle}>Relationships Lost (one per line)</label>
+          <textarea
+            value={toLines(form.relationships_lost)}
+            onChange={(e) =>
+              setForm((p) => ({ ...p, relationships_lost: fromLines(e.target.value) }))
+            }
+            placeholder={"Example:\nHouse Sordin\nLaughing Gods"}
+            rows={6}
+            style={textareaStyle}
+            onFocus={(e) => (e.currentTarget.style.borderColor = "rgba(0,210,255,0.55)")}
+            onBlur={(e) => (e.currentTarget.style.borderColor = "rgba(255,255,255,0.10)")}
+          />
+        </div>
+      </div>
+
+      {/* Actions */}
       <div style={actionsRow}>
         <button onClick={closeModals} disabled={saving} style={cancelBtn}>
           Cancel
@@ -124,15 +219,20 @@ export default function PlanetView() {
   const [deletingSession, setDeletingSession] = useState(null);
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState("");
+  const [planets, setPlanets] = useState([]);
 
-  const emptyForm = {
+  const makeEmptyForm = () => ({
     session_number: "",
     title: "",
+    planet_id: id ? Number(id) : "",     
     summary: "",
-    campaign_title: "",
+    campaign_title: "Chalnath Expanse",     
     logs: [],
-  };
-  const [form, setForm] = useState(emptyForm);
+    relationships_gained: [],
+    relationships_lost: [],
+  });
+
+  const [form, setForm] = useState(makeEmptyForm());
 
   const load = async () => {
     try {
@@ -149,7 +249,9 @@ export default function PlanetView() {
       const planetEvents = (eventsRes || []).filter(
         (e) => String(e.related_planet) === String(id)
       );
+
       setEvents(planetEvents);
+      setPlanets(planetsRes || []);
 
       const planetSessionIds = [
         ...new Set(
@@ -204,7 +306,7 @@ export default function PlanetView() {
   // ---------------- CRUD handlers ----------------
   const openAdd = () => {
     setFormError("");
-    setForm(emptyForm);
+    setForm(makeEmptyForm());
     setShowAdd(true);
   };
 
@@ -214,9 +316,12 @@ export default function PlanetView() {
     setForm({
       session_number: s.session_number ?? "",
       title: s.title ?? "",
+      planet_id: s.planet_id ?? (id ? Number(id) : ""),
       summary: s.summary ?? "",
-      campaign_title: s.campaign_title ?? "",
+      campaign_title: s.campaign_title ?? "Chalnath Expanse",
       logs: Array.isArray(s.logs) ? s.logs : [],
+      relationships_gained: Array.isArray(s.relationships_gained) ? s.relationships_gained : [],
+      relationships_lost: Array.isArray(s.relationships_lost) ? s.relationships_lost : [],
     });
   };
 
@@ -230,9 +335,12 @@ export default function PlanetView() {
 
   const validateForm = () => {
     const sn = Number(form.session_number);
-    if (!Number.isFinite(sn) || sn <= 0)
-      return "Session number must be a positive number.";
+    if (!Number.isFinite(sn) || sn <= 0) return "Session number must be a positive number.";
     if (!String(form.title || "").trim()) return "Title is required.";
+
+    const pid = Number(form.planet_id);
+    if (!Number.isFinite(pid) || pid <= 0) return "Planet ID must be a positive number.";
+
     return "";
   };
 
@@ -246,9 +354,16 @@ export default function PlanetView() {
       const res = await fetch(`${API_URL}api/sessions`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+          body: JSON.stringify({
           ...form,
           session_number: Number(form.session_number),
+          planet_id:
+            form.planet_id === "" || form.planet_id === null || form.planet_id === undefined
+              ? null
+              : Number(form.planet_id),
+          logs: Array.isArray(form.logs) ? form.logs : [],
+          relationships_gained: Array.isArray(form.relationships_gained) ? form.relationships_gained : [],
+          relationships_lost: Array.isArray(form.relationships_lost) ? form.relationships_lost : [],
         }),
       });
 
@@ -280,6 +395,13 @@ export default function PlanetView() {
         body: JSON.stringify({
           ...form,
           session_number: Number(form.session_number),
+          planet_id:
+            form.planet_id === "" || form.planet_id === null || form.planet_id === undefined
+              ? null
+              : Number(form.planet_id),
+          logs: Array.isArray(form.logs) ? form.logs : [],
+          relationships_gained: Array.isArray(form.relationships_gained) ? form.relationships_gained : [],
+          relationships_lost: Array.isArray(form.relationships_lost) ? form.relationships_lost : [],
         }),
       });
 
@@ -535,35 +657,36 @@ export default function PlanetView() {
         ))}
 
       {showAdd && (
-  <ModalShell title="Add Session" onClose={closeModals} formError={formError}>
-    <SessionForm
-      form={form}
-      setForm={setForm}
-      onSubmit={createSession}
-      submitLabel="Create Session"
-      closeModals={closeModals}
-      saving={saving}
-    />
-  </ModalShell>
-)}
+        <ModalShell title="Add Session" onClose={closeModals} formError={formError}>
+          <SessionForm
+            form={form}
+            setForm={setForm}
+            onSubmit={createSession}
+            submitLabel="Create Session"
+            closeModals={closeModals}
+            saving={saving}
+            planets={planets}
+          />
+        </ModalShell>
+      )}
 
-{editingSession && (
-  <ModalShell
-    title={`Update Session ${editingSession.session_number ?? ""}`}
-    onClose={closeModals}
-    formError={formError}
-  >
-    <SessionForm
-      form={form}
-      setForm={setForm}
-      onSubmit={updateSession}
-      submitLabel="Save Changes"
-      closeModals={closeModals}
-      saving={saving}
-    />
-  </ModalShell>
-)}
-
+      {editingSession && (
+        <ModalShell
+          title={`Update Session ${editingSession.session_number ?? ""}`}
+          onClose={closeModals}
+          formError={formError}
+        >
+          <SessionForm
+            form={form}
+            setForm={setForm}
+            onSubmit={updateSession}
+            submitLabel="Save Changes"
+            closeModals={closeModals}
+            saving={saving}
+            planets={planets}
+          />
+        </ModalShell>
+      )}
 
       {/* ---------------- DELETE MODAL ---------------- */}
       {deletingSession && (

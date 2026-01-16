@@ -34,6 +34,12 @@ function Campaign({ campaign, planets }) {
       desc: "A Sordin PDF trooper driven by duty and guilt, last seen missing in the chaos of Nikonova.",
       path: "/fafo/joe",
     },
+    {
+      name: "Victor",
+      img: "/images/joe.png",
+      desc: "7 Feet tall. Stealthy and never understands why he is part of this group to begin with.",
+      path: "/fafo/joe",
+    },
   ];
 
   return (

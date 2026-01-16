@@ -1064,12 +1064,18 @@ app.get("/api/sessions/:id", async (req, res) => {
 // ----------------------------
 app.post("/api/sessions", async (req: Request, res: Response) => {
   try {
-    const { session_number, title, summary, logs } = req.body;
+    const {
+      session_number,
+      title,
+      summary,
+      logs,
+      planet_id,
+      campaign_title,
+      relationships_gained,
+      relationships_lost,
+    } = req.body;
 
-    // Optional defaults (tweak if you want per-planet sessions later)fapi/sessions/
-    const campaign_id = 1; // "Chalnath Expanse"
-    const planet_id = null; // set if you add planet selection in the UI
-
+    // Validate
     if (!Number.isFinite(Number(session_number)) || Number(session_number) <= 0) {
       return res.status(400).json({ error: "session_number must be a positive number" });
     }
@@ -1077,10 +1083,32 @@ app.post("/api/sessions", async (req: Request, res: Response) => {
       return res.status(400).json({ error: "title is required" });
     }
 
+    // Campaign lookup by title (fallback to 1)
+    let campaign_id = 1;
+    if (String(campaign_title || "").trim()) {
+      const camp = await db.query(
+        `SELECT id FROM campaign WHERE LOWER(title) = LOWER($1) LIMIT 1;`,
+        [String(campaign_title).trim()]
+      );
+      if (camp.rows[0]?.id) campaign_id = camp.rows[0].id;
+    }
+
+    // Planet (nullable)
+    const planetId =
+      planet_id === null || planet_id === undefined || planet_id === ""
+        ? null
+        : Number(planet_id);
+
+    if (planetId !== null && (!Number.isFinite(planetId) || planetId <= 0)) {
+      return res.status(400).json({ error: "planet_id must be a positive number or null" });
+    }
+
     const { rows } = await db.query(
       `
-      INSERT INTO session_details (session_number, title, summary, campaign_id, planet_id, logs)
-      VALUES ($1, $2, $3, $4, $5, $6)
+      INSERT INTO session_details
+        (session_number, title, summary, campaign_id, planet_id, logs, relationships_gained, relationships_lost)
+      VALUES
+        ($1, $2, $3, $4, $5, $6, $7, $8)
       RETURNING *;
       `,
       [
@@ -1088,13 +1116,14 @@ app.post("/api/sessions", async (req: Request, res: Response) => {
         String(title).trim(),
         summary?.trim?.() ? String(summary).trim() : null,
         campaign_id,
-        planet_id,
+        planetId,
         Array.isArray(logs) ? logs : [],
+        Array.isArray(relationships_gained) ? relationships_gained : [],
+        Array.isArray(relationships_lost) ? relationships_lost : [],
       ]
     );
 
-    // Return the joined shape (so the UI has campaign_title/planet_name if needed)
-    const newId = rows[0].id;
+    // Return joined display fields
     const { rows: joined } = await db.query(
       `
       SELECT s.*, p.name AS planet_name, c.title AS campaign_title
@@ -1103,14 +1132,13 @@ app.post("/api/sessions", async (req: Request, res: Response) => {
       LEFT JOIN campaign c ON s.campaign_id = c.id
       WHERE s.id = $1;
       `,
-      [newId]
+      [rows[0].id]
     );
 
     res.status(201).json(joined[0] ?? rows[0]);
   } catch (err: any) {
     console.error("Error creating session:", err);
 
-    // If you have a UNIQUE(session_number), this will be a nice message.
     if (err?.code === "23505") {
       return res.status(409).json({ error: "A session with that session_number already exists." });
     }
@@ -1126,7 +1154,17 @@ app.post("/api/sessions", async (req: Request, res: Response) => {
 app.put("/api/sessions/:id", async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { session_number, title, summary, logs } = req.body;
+
+    const {
+      session_number,
+      title,
+      summary,
+      logs,
+      planet_id,
+      campaign_title,
+      relationships_gained,
+      relationships_lost,
+    } = req.body;
 
     if (!Number.isFinite(Number(session_number)) || Number(session_number) <= 0) {
       return res.status(400).json({ error: "session_number must be a positive number" });
@@ -1135,14 +1173,37 @@ app.put("/api/sessions/:id", async (req: Request, res: Response) => {
       return res.status(400).json({ error: "title is required" });
     }
 
+    // Campaign lookup by title (optional)
+    let campaign_id: number | null = null;
+    if (String(campaign_title || "").trim()) {
+      const camp = await db.query(
+        `SELECT id FROM campaign WHERE LOWER(title) = LOWER($1) LIMIT 1;`,
+        [String(campaign_title).trim()]
+      );
+      if (camp.rows[0]?.id) campaign_id = camp.rows[0].id;
+    }
+
+    const planetId =
+      planet_id === null || planet_id === undefined || planet_id === ""
+        ? null
+        : Number(planet_id);
+
+    if (planetId !== null && (!Number.isFinite(planetId) || planetId <= 0)) {
+      return res.status(400).json({ error: "planet_id must be a positive number or null" });
+    }
+
     const { rows } = await db.query(
       `
       UPDATE session_details
       SET session_number = $1,
           title = $2,
           summary = $3,
-          logs = $4
-      WHERE id = $5
+          logs = $4,
+          planet_id = $5,
+          relationships_gained = $6,
+          relationships_lost = $7,
+          campaign_id = COALESCE($8, campaign_id)
+      WHERE id = $9
       RETURNING *;
       `,
       [
@@ -1150,6 +1211,10 @@ app.put("/api/sessions/:id", async (req: Request, res: Response) => {
         String(title).trim(),
         summary?.trim?.() ? String(summary).trim() : null,
         Array.isArray(logs) ? logs : [],
+        planetId,
+        Array.isArray(relationships_gained) ? relationships_gained : [],
+        Array.isArray(relationships_lost) ? relationships_lost : [],
+        campaign_id, // nullable; only overwrites if found
         id,
       ]
     );
