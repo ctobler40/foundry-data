@@ -5,9 +5,12 @@ import cors from "cors";
 import { Pool } from "pg";
 import dotenv from "dotenv";
 import { createServer } from "http";
+import multer from "multer";
+import { cloudinary } from "./cloudinary";
 
 dotenv.config();
 
+const upload = multer({ storage: multer.memoryStorage() });
 const app = express();
 const httpServer = createServer(app);
 
@@ -39,6 +42,49 @@ app.get("/", (req, res) => {
   res.send("API is running. Use /api/talents or /api/characters for data.");
 });
 
+// ============================================================================
+// CLOUDINARY PHOTO ROUTES
+// ============================================================================
+app.post("/api/upload/image", upload.single("image"), async (req: Request, res: Response) => {
+  try {
+    if (!req.file) return res.status(400).json({ error: "No file uploaded" });
+
+    const folder = process.env.CLOUDINARY_FOLDER || "foundry-data";
+
+    // Convert buffer -> base64 data URI (simple + reliable)
+    const base64 = req.file.buffer.toString("base64");
+    const dataUri = `data:${req.file.mimetype};base64,${base64}`;
+
+    const result = await cloudinary.uploader.upload(dataUri, {
+      folder,
+      resource_type: "image",
+    });
+
+    res.status(201).json({
+      url: result.secure_url,
+      public_id: result.public_id,
+      width: result.width,
+      height: result.height,
+      format: result.format,
+    });
+  } catch (err) {
+    console.error("Cloudinary upload error:", err);
+    res.status(500).json({ error: "Upload failed" });
+  }
+});
+
+app.delete("/api/upload/image", async (req: Request, res: Response) => {
+  try {
+    const { public_id } = req.body;
+    if (!public_id) return res.status(400).json({ error: "public_id required" });
+
+    const result = await cloudinary.uploader.destroy(public_id);
+    res.json({ result });
+  } catch (err) {
+    console.error("Cloudinary delete error:", err);
+    res.status(500).json({ error: "Delete failed" });
+  }
+});
 
 // ============================================================================
 // TALENTS ROUTES

@@ -10,7 +10,10 @@ function Characters() {
   const [showUploader, setShowUploader] = useState(false);
   const [showEditor, setShowEditor] = useState(false);
   const [selectedChar, setSelectedChar] = useState(null);
-  const [newImageUrl, setNewImageUrl] = useState("");
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [uploadError, setUploadError] = useState("");
+  const [uploadedUrl, setUploadedUrl] = useState("");
   const [importanceOptions, setImportanceOptions] = useState([]);
   const [statusOptions, setStatusOptions] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
@@ -60,40 +63,80 @@ function Characters() {
 
   const handleOpenUploader = (char) => {
     setSelectedChar(char);
-    setNewImageUrl(char.iconhtml || "");
+    setSelectedFile(null);
+    setUploadError("");
+    setUploadingImage(false);
+    setUploadedUrl(char.iconhtml || ""); // show current image if it exists
     setShowUploader(true);
   };
 
   const handleCloseUploader = () => {
     setSelectedChar(null);
-    setNewImageUrl("");
+    setSelectedFile(null);
+    setUploadError("");
+    setUploadingImage(false);
+    setUploadedUrl("");
     setShowUploader(false);
   };
 
   const handleSaveImage = async () => {
     if (!selectedChar) return;
+
+    // Must choose a file OR already have an uploadedUrl
+    if (!selectedFile && !uploadedUrl) return;
+
+    setUploadingImage(true);
+    setUploadError("");
+
     try {
+      let finalUrl = uploadedUrl;
+
+      // If user picked a new file, upload it first
+      if (selectedFile) {
+        const fd = new FormData();
+        fd.append("image", selectedFile);
+
+        const uploadRes = await fetch(`${API_URL}api/upload/image`, {
+          method: "POST",
+          body: fd,
+        });
+
+        if (!uploadRes.ok) {
+          const msg = await uploadRes.text().catch(() => "");
+          throw new Error(msg || `Image upload failed (${uploadRes.status})`);
+        }
+
+        const uploaded = await uploadRes.json();
+        finalUrl = uploaded.url;        // secure_url from Cloudinary
+        setUploadedUrl(finalUrl);       // update preview immediately
+      }
+
+      // Save url into the character (you’re currently using iconhtml)
       const res = await fetch(`${API_URL}api/characters/${selectedChar.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ iconhtml: newImageUrl }),
+        body: JSON.stringify({ iconhtml: finalUrl }),
       });
 
-      if (res.ok) {
-        // Immediately fetch updated character to refresh joined fields
-        const refreshedRes = await fetch(
-          `${API_URL}api/characters/${selectedChar.id}`
-        );
-        const refreshed = await refreshedRes.json();
-
-        setCharacters((prev) =>
-          prev.map((c) => (c.id === refreshed.id ? refreshed : c))
-        );
-
-        handleCloseUploader();
+      if (!res.ok) {
+        const msg = await res.text().catch(() => "");
+        throw new Error(msg || `Character update failed (${res.status})`);
       }
+
+      // Refresh that one character
+      const refreshedRes = await fetch(`${API_URL}api/characters/${selectedChar.id}`);
+      const refreshed = await refreshedRes.json();
+
+      setCharacters((prev) =>
+        prev.map((c) => (c.id === refreshed.id ? refreshed : c))
+      );
+
+      handleCloseUploader();
     } catch (err) {
       console.error("Error updating character image:", err);
+      setUploadError(err?.message || "Upload failed");
+    } finally {
+      setUploadingImage(false);
     }
   };
 
@@ -266,18 +309,52 @@ function Characters() {
             {selectedChar ? (
               <>
                 <h2>Update Image for {selectedChar.name}</h2>
-                <p>Paste the image URL below (from your online upload):</p>
-                <input
-                  type="text"
-                  className="modern-input"
-                  placeholder="https://example.com/image.png"
-                  value={newImageUrl}
-                  onChange={(e) => setNewImageUrl(e.target.value)}
-                  style={{ marginBottom: "1rem" }}
-                />
+                <p>Select an image file to upload:</p>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0] || null;
+                      setSelectedFile(file);
+                      setUploadError("");
+                      if (file) {
+                        // local preview while waiting
+                        setUploadedUrl(URL.createObjectURL(file));
+                      }
+                    }}
+                    style={{ marginBottom: "1rem" }}
+                  />
+
+                  {uploadedUrl && (
+                    <div style={{ marginBottom: "1rem" }}>
+                      <p style={{ marginBottom: "0.5rem" }}>Preview:</p>
+                      <img
+                        src={uploadedUrl}
+                        alt="preview"
+                        style={{
+                          width: "220px",
+                          height: "220px",
+                          objectFit: "cover",
+                          borderRadius: "12px",
+                          border: "1px solid #2b2b2b",
+                          boxShadow: "0 0 12px rgba(0, 210, 255, 0.15)",
+                        }}
+                      />
+                    </div>
+                  )}
+
+                  {uploadError && (
+                    <p style={{ color: "salmon", marginBottom: "1rem" }}>
+                      {uploadError}
+                    </p>
+                  )}
                 <div style={{ display: "flex", justifyContent: "center", gap: "1rem" }}>
-                  <button className="modern-btn" onClick={handleSaveImage}>
-                    Save
+                  <button
+                    className="modern-btn"
+                    onClick={handleSaveImage}
+                    disabled={uploadingImage || (!selectedFile && !uploadedUrl)}
+                  >
+                    {uploadingImage ? "Uploading..." : "Save"}
                   </button>
                   <button
                     className="modern-btn"
