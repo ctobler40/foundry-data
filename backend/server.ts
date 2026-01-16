@@ -1033,7 +1033,7 @@ app.get("/api/sessions/:id", async (req: Request, res: Response) => {
       SELECT l.*, ch.name AS author_name
       FROM session_logs l
       LEFT JOIN characters ch ON l.author_id = ch.id
-      WHERE l.event_session = $1
+      WHERE l.session_id = $1
       ORDER BY l.timestamp ASC
       `,
       [id]
@@ -2202,7 +2202,7 @@ app.get("/api/sessions/:id", async (req, res) => {
     const { rows: logs } = await db.query(
       `SELECT l.*, ch.name AS author_name FROM session_logs l
        LEFT JOIN characters ch ON l.author_id = ch.id
-       WHERE l.event_session = $1 ORDER BY l.timestamp ASC`,
+       WHERE l.session_id = $1 ORDER BY l.timestamp ASC`,
       [id]
     );
 

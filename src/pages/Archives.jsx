@@ -50,26 +50,32 @@ function Archives() {
           </div>
 
           <div className="feature-card">
-            <h3>Abilities</h3>
-            <p>(Coming soon) Discover Psyker powers, Faith abilities, and faction-specific boons.</p>
+            <h3>Wargear</h3>
+            <p>Weapon traits. Weapon upgrades, Ammo. Armor. Tools and Equipment.</p>
             <span className="coming-soon">Coming Soon</span>
           </div>
 
           <div className="feature-card">
-            <h3>Abilities</h3>
-            <p>(Coming soon) Discover Psyker powers, Faith abilities, and faction-specific boons.</p>
+            <h3>Endeavors</h3>
+            <p>Your character may live in a galaxy rife with horrors and unending conflict, but the perilous scenarios they face will eventually come to an end.</p>
             <span className="coming-soon">Coming Soon</span>
           </div>
 
           <div className="feature-card">
-            <h3>Abilities</h3>
-            <p>(Coming soon) Discover Psyker powers, Faith abilities, and faction-specific boons.</p>
+            <h3>Advanced Skills</h3>
+            <p>Operating big boi ships. Stabbing people enough times to make them feel good. Other shtuff, too.</p>
             <span className="coming-soon">Coming Soon</span>
           </div>
 
           <div className="feature-card">
-            <h3>Abilities</h3>
-            <p>(Coming soon) Discover Psyker powers, Faith abilities, and faction-specific boons.</p>
+            <h3>Bestiary</h3>
+            <p>The Warp-torn Gilead System is home to innumerate dangers; deranged warriors with advanced archeotech, monstrous xenos bioforms, and maddening otherworldly daemons.</p>
+            <span className="coming-soon">Coming Soon</span>
+          </div>
+
+          <div className="feature-card">
+            <h3>Factions</h3>
+            <p>Who the hell are we? And who the hell are we fighting?</p>
             <span className="coming-soon">Coming Soon</span>
           </div>
         </div>

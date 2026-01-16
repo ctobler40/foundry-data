@@ -24,6 +24,12 @@ export default function SessionView() {
       try {
         const res = await fetch(`${API_URL}api/sessions/${id}`);
         const data = await res.json();
+
+        if (!res.ok) {
+          throw new Error(data?.error || `Request failed: ${res.status}`);
+        }
+
+        console.log(data);
         setSession(data);
       } catch (e) {
         console.error("Error loading session:", e);
