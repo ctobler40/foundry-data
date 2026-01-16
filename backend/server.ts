@@ -1011,7 +1011,7 @@ app.get("/api/sessions", async (req: Request, res: Response) => {
 });
 
 // Get single session with timeline + logs
-app.get("/api/sessions/:id", async (req: Request, res: Response) => {
+app.get("/api/sessions/:id", async (req, res) => {
   try {
     const { id } = req.params;
 
@@ -1040,8 +1040,13 @@ app.get("/api/sessions/:id", async (req: Request, res: Response) => {
     );
 
     const { rows: events } = await db.query(
-      `SELECT * FROM timeline_events WHERE event_session = $1 ORDER BY imperial_code ASC`,
-      [id]
+      `
+      SELECT t.*
+      FROM timeline_events t
+      WHERE t.event_session = $1
+      ORDER BY t.imperial_code ASC, t.id ASC
+      `,
+      [session[0].session_number]
     );
 
     res.json({ ...session[0], logs, events });
@@ -1050,6 +1055,7 @@ app.get("/api/sessions/:id", async (req: Request, res: Response) => {
     res.status(500).json({ error: "Internal Server Error" });
   }
 });
+
 
 // ----------------------------
 // CREATE session
@@ -1060,7 +1066,7 @@ app.post("/api/sessions", async (req: Request, res: Response) => {
   try {
     const { session_number, title, summary, logs } = req.body;
 
-    // Optional defaults (tweak if you want per-planet sessions later)
+    // Optional defaults (tweak if you want per-planet sessions later)fapi/sessions/
     const campaign_id = 1; // "Chalnath Expanse"
     const planet_id = null; // set if you add planet selection in the UI
 
@@ -2181,39 +2187,6 @@ app.get("/api/sessions", async (req, res) => {
     res.json(rows);
   } catch (err) {
     console.error("Error fetching sessions:", err);
-    res.status(500).json({ error: "Internal Server Error" });
-  }
-});
-
-// Get single session with timeline + logs
-app.get("/api/sessions/:id", async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { rows: session } = await db.query(`
-      SELECT s.*, p.name AS planet_name, c.title AS campaign_title
-      FROM session_details s
-      LEFT JOIN campaign_planets p ON s.planet_id = p.id
-      LEFT JOIN campaign c ON s.campaign_id = c.id
-      WHERE s.id = $1;
-    `, [id]);
-
-    if (session.length === 0) return res.status(404).json({ error: "Session not found" });
-
-    const { rows: logs } = await db.query(
-      `SELECT l.*, ch.name AS author_name FROM session_logs l
-       LEFT JOIN characters ch ON l.author_id = ch.id
-       WHERE l.session_id = $1 ORDER BY l.timestamp ASC`,
-      [id]
-    );
-
-    const { rows: events } = await db.query(
-      `SELECT * FROM timeline_events WHERE event_session = $1 ORDER BY imperial_code ASC`,
-      [id]
-    );
-
-    res.json({ ...session[0], logs, events });
-  } catch (err) {
-    console.error("Error fetching session:", err);
     res.status(500).json({ error: "Internal Server Error" });
   }
 });

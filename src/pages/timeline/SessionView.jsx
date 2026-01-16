@@ -46,7 +46,6 @@ export default function SessionView() {
   const logs = session.logs || [];
   const events = (session.events || []).sort(
     (a, b) =>
-      (a.imperial_code || "").localeCompare(b.imperial_code || "") ||
       (a.event_session || 0) - (b.event_session || 0) ||
       a.id - b.id
   );

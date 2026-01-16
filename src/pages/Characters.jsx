@@ -300,7 +300,7 @@ function Characters() {
       {/* --- Character Create Modal --- */}
       {showCreate && (
         <div className="modal-overlay">
-          <div className="modal-content" style={{
+          <div style={{
             background: "linear-gradient(180deg, #1b1b1b 0%, #121212 100%)",
             border: "1px solid #2b2b2b",
             boxShadow: "0 0 15px rgba(0, 210, 255, 0.2)",
