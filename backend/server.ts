@@ -1178,12 +1178,20 @@ app.post("/api/sessions", async (req: Request, res: Response) => {
       return res.status(400).json({ error: "planet_id must be a positive number or null" });
     }
 
+    const gained = Array.isArray(relationships_gained)
+      ? relationships_gained.map((x: any) => Number(x)).filter((n: number) => Number.isFinite(n))
+      : [];
+
+    const lost = Array.isArray(relationships_lost)
+      ? relationships_lost.map((x: any) => Number(x)).filter((n: number) => Number.isFinite(n))
+      : [];
+
     const { rows } = await db.query(
       `
       INSERT INTO session_details
         (session_number, title, summary, campaign_id, planet_id, logs, relationships_gained, relationships_lost)
       VALUES
-        ($1, $2, $3, $4, $5, $6, $7, $8)
+        ($1, $2, $3, $4, $5, $6, $7::int[], $8::int[])
       RETURNING *;
       `,
       [
@@ -1193,8 +1201,8 @@ app.post("/api/sessions", async (req: Request, res: Response) => {
         campaign_id,
         planetId,
         Array.isArray(logs) ? logs : [],
-        Array.isArray(relationships_gained) ? relationships_gained : [],
-        Array.isArray(relationships_lost) ? relationships_lost : [],
+        gained,
+        lost,
       ]
     );
 
@@ -1267,6 +1275,14 @@ app.put("/api/sessions/:id", async (req: Request, res: Response) => {
       return res.status(400).json({ error: "planet_id must be a positive number or null" });
     }
 
+    const gained = Array.isArray(relationships_gained)
+      ? relationships_gained.map((x: any) => Number(x)).filter((n: number) => Number.isFinite(n))
+      : [];
+
+    const lost = Array.isArray(relationships_lost)
+      ? relationships_lost.map((x: any) => Number(x)).filter((n: number) => Number.isFinite(n))
+      : [];
+
     const { rows } = await db.query(
       `
       UPDATE session_details
@@ -1275,8 +1291,8 @@ app.put("/api/sessions/:id", async (req: Request, res: Response) => {
           summary = $3,
           logs = $4,
           planet_id = $5,
-          relationships_gained = $6,
-          relationships_lost = $7,
+          relationships_gained = $6::int[],
+          relationships_lost = $7::int[],
           campaign_id = COALESCE($8, campaign_id)
       WHERE id = $9
       RETURNING *;
@@ -1287,9 +1303,9 @@ app.put("/api/sessions/:id", async (req: Request, res: Response) => {
         summary?.trim?.() ? String(summary).trim() : null,
         Array.isArray(logs) ? logs : [],
         planetId,
-        Array.isArray(relationships_gained) ? relationships_gained : [],
-        Array.isArray(relationships_lost) ? relationships_lost : [],
-        campaign_id, // nullable; only overwrites if found
+        gained,
+        lost,
+        campaign_id,
         id,
       ]
     );

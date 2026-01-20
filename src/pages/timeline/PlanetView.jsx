@@ -1,5 +1,5 @@
 // pages/timeline/PlanetView.jsx
-import { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import Kalidonia from "../ChalnathLocations/Kalidonia";
 import Haephos from "../ChalnathLocations/Haephos";
@@ -43,14 +43,19 @@ function ModalShell({ title, children, onClose, formError }) {
   );
 }
 
-function SessionForm({ form, setForm, onSubmit, submitLabel, closeModals, saving, planets }) {
-  // helpers: textarea <-> array
+function SessionForm({ form, setForm, onSubmit, submitLabel, closeModals, saving, planets, characters }) {
   const toLines = (arr) => (Array.isArray(arr) ? arr.join("\n") : "");
   const fromLines = (txt) =>
     String(txt || "")
       .split("\n")
       .map((s) => s.trim())
       .filter(Boolean);
+
+  const [logsText, setLogsText] = useState(() => toLines(form.logs));
+
+  useEffect(() => {
+    setLogsText(toLines(form.logs));
+  }, [form.logs]);
 
   return (
     <div style={{ display: "grid", gap: "0.9rem" }}>
@@ -145,51 +150,42 @@ function SessionForm({ form, setForm, onSubmit, submitLabel, closeModals, saving
       </div>
 
       {/* Logs */}
-      <div style={field}>
-        <label style={labelStyle}>Logs (one per line)</label>
-        <textarea
-          value={toLines(form.logs)}
-          onChange={(e) => setForm((p) => ({ ...p, logs: fromLines(e.target.value) }))}
-          placeholder={"Example:\n- Met Kroot smuggler\n- Fought cultists in undercity"}
-          rows={6}
-          style={textareaStyle}
-          onFocus={(e) => (e.currentTarget.style.borderColor = "rgba(0,210,255,0.55)")}
-          onBlur={(e) => (e.currentTarget.style.borderColor = "rgba(255,255,255,0.10)")}
-        />
-      </div>
+      <textarea
+        value={logsText}
+        onChange={(e) => setLogsText(e.target.value)}
+        onBlur={() =>
+          setForm((p) => ({
+            ...p,
+            logs: logsText
+              .split("\n")
+              .map((s) => s.replace(/\r/g, "")) // keep spaces, just normalize CRLF
+              .filter((s) => s.length > 0),     // remove truly empty lines only when leaving field
+          }))
+        }
+        placeholder={"Example:\n- Met Kroot smuggler\n- Fought cultists in undercity"}
+        rows={6}
+        style={textareaStyle}
+        onFocus={(e) => (e.currentTarget.style.borderColor = "rgba(0,210,255,0.55)")}
+        onBlurCapture={(e) => (e.currentTarget.style.borderColor = "rgba(255,255,255,0.10)")}
+      />
 
       {/* Relationships */}
       <div style={twoCol}>
-        <div style={field}>
-          <label style={labelStyle}>Relationships Gained (one per line)</label>
-          <textarea
-            value={toLines(form.relationships_gained)}
-            onChange={(e) =>
-              setForm((p) => ({ ...p, relationships_gained: fromLines(e.target.value) }))
-            }
-            placeholder={"Example:\nMedved\nBlack Briars"}
-            rows={6}
-            style={textareaStyle}
-            onFocus={(e) => (e.currentTarget.style.borderColor = "rgba(0,210,255,0.55)")}
-            onBlur={(e) => (e.currentTarget.style.borderColor = "rgba(255,255,255,0.10)")}
-          />
-        </div>
+        <RelationshipPicker
+          label="Relationships Gained"
+          valueIds={form.relationships_gained}
+          onChangeIds={(ids) => setForm((p) => ({ ...p, relationships_gained: ids }))}
+          characters={characters}
+        />
 
-        <div style={field}>
-          <label style={labelStyle}>Relationships Lost (one per line)</label>
-          <textarea
-            value={toLines(form.relationships_lost)}
-            onChange={(e) =>
-              setForm((p) => ({ ...p, relationships_lost: fromLines(e.target.value) }))
-            }
-            placeholder={"Example:\nHouse Sordin\nLaughing Gods"}
-            rows={6}
-            style={textareaStyle}
-            onFocus={(e) => (e.currentTarget.style.borderColor = "rgba(0,210,255,0.55)")}
-            onBlur={(e) => (e.currentTarget.style.borderColor = "rgba(255,255,255,0.10)")}
-          />
-        </div>
+        <RelationshipPicker
+          label="Relationships Lost"
+          valueIds={form.relationships_lost}
+          onChangeIds={(ids) => setForm((p) => ({ ...p, relationships_lost: ids }))}
+          characters={characters}
+        />
       </div>
+
 
       {/* Actions */}
       <div style={actionsRow}>
@@ -203,6 +199,233 @@ function SessionForm({ form, setForm, onSubmit, submitLabel, closeModals, saving
     </div>
   );
 }
+
+function RelationshipPicker({ label, valueIds, onChangeIds, characters }) {
+  const [open, setOpen] = useState(false);
+  const [q, setQ] = useState("");
+  const wrapRef = React.useRef(null);
+
+  const safeIds = Array.isArray(valueIds) ? valueIds : [];
+  const selectedSet = useMemo(() => new Set(safeIds.map(Number)), [safeIds]);
+
+  const byId = useMemo(() => {
+    const m = new Map();
+    (characters || []).forEach((c) => m.set(Number(c.id), c));
+    return m;
+  }, [characters]);
+
+  const selected = useMemo(() => {
+    return safeIds
+      .map((id) => Number(id))
+      .filter((id) => Number.isFinite(id))
+      .map((id) => byId.get(id))
+      .filter(Boolean);
+  }, [safeIds, byId]);
+
+  const filtered = useMemo(() => {
+    const query = q.trim().toLowerCase();
+    const list = (characters || []).slice().sort((a, b) =>
+      String(a.name || "").localeCompare(String(b.name || ""))
+    );
+
+    if (!query) return list;
+
+    return list.filter((c) => {
+      const name = String(c.name || "").toLowerCase();
+      const id = String(c.id || "");
+      return name.includes(query) || id.includes(query);
+    });
+  }, [characters, q]);
+
+  const addId = (id) => {
+    const n = Number(id);
+    if (!Number.isFinite(n)) return;
+    if (selectedSet.has(n)) return;
+    onChangeIds([...safeIds.map(Number), n]);
+  };
+
+  const removeId = (id) => {
+    const n = Number(id);
+    onChangeIds(safeIds.map(Number).filter((x) => x !== n));
+  };
+
+  // close on click outside
+  useEffect(() => {
+    const onDocDown = (e) => {
+      if (!wrapRef.current) return;
+      if (!wrapRef.current.contains(e.target)) setOpen(false);
+    };
+    document.addEventListener("mousedown", onDocDown);
+    return () => document.removeEventListener("mousedown", onDocDown);
+  }, []);
+
+  return (
+    <div style={field} ref={wrapRef}>
+      <label style={labelStyle}>{label}</label>
+
+      {/* Selected chips */}
+      {selected.length > 0 && (
+        <div style={chipRow}>
+          {selected.map((c) => (
+            <div key={c.id} style={chip}>
+              <span style={{ opacity: 0.95 }}>{c.name}</span>
+              <button
+                type="button"
+                onClick={() => removeId(c.id)}
+                style={chipX}
+                aria-label={`Remove ${c.name}`}
+                title="Remove"
+              >
+                ✕
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Search input */}
+      <div style={{ position: "relative", width: "95%" }}>
+        <input
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          placeholder="Search characters..."
+          style={{
+            ...inputStyle,
+            width: "100%",
+            paddingRight: "2.4rem",
+          }}
+          onFocus={() => setOpen(true)}
+          onClick={() => setOpen(true)}
+        />
+
+        <button
+          type="button"
+          onClick={() => setOpen((v) => !v)}
+          style={dropdownBtn}
+          aria-label="Toggle character list"
+          title="Show all"
+        >
+          ▾
+        </button>
+
+        {/* Dropdown */}
+        {open && (
+          <div style={dropdown}>
+            {filtered.length === 0 ? (
+              <div style={dropdownEmpty}>No matches.</div>
+            ) : (
+              filtered.map((c) => {
+                const isSelected = selectedSet.has(Number(c.id));
+                return (
+                  <button
+                    key={c.id}
+                    type="button"
+                    onClick={() => addId(c.id)}
+                    disabled={isSelected}
+                    style={{
+                      ...dropdownItem,
+                      opacity: isSelected ? 0.45 : 1,
+                      cursor: isSelected ? "not-allowed" : "pointer",
+                    }}
+                    title={isSelected ? "Already selected" : "Add"}
+                  >
+                    <span>{c.name}</span>
+                    <span style={{ color: "#6f8ca3", fontSize: "0.85rem" }}>
+                      #{c.id}
+                    </span>
+                  </button>
+                );
+              })
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ---- RelationshipPicker styles ----
+const chipRow = {
+  display: "flex",
+  flexWrap: "wrap",
+  gap: "0.5rem",
+  width: "95%",
+  marginBottom: "0.35rem",
+};
+
+const chip = {
+  display: "inline-flex",
+  alignItems: "center",
+  gap: "0.45rem",
+  padding: "0.35rem 0.55rem",
+  borderRadius: "999px",
+  border: "1px solid rgba(0,210,255,0.18)",
+  background: "rgba(0,210,255,0.08)",
+  color: "#d4f1ff",
+  fontWeight: 650,
+};
+
+const chipX = {
+  border: "none",
+  background: "transparent",
+  color: "#d4f1ff",
+  cursor: "pointer",
+  fontSize: "0.9rem",
+  lineHeight: 1,
+  opacity: 0.85,
+};
+
+const dropdownBtn = {
+  position: "absolute",
+  right: "0.35rem",
+  top: "50%",
+  transform: "translateY(-50%)",
+  height: "34px",
+  width: "34px",
+  borderRadius: "10px",
+  border: "1px solid rgba(255,255,255,0.12)",
+  background: "rgba(0,0,0,0.15)",
+  color: "#d4f1ff",
+  cursor: "pointer",
+  display: "grid",
+  placeItems: "center",
+};
+
+const dropdown = {
+  position: "absolute",
+  left: 0,
+  right: 0,
+  bottom: "calc(100% + 0.4rem)", 
+  top: "auto",
+  zIndex: 10001, 
+  maxHeight: "260px",
+  overflowY: "auto",
+  overflowX: "hidden",
+  borderRadius: "14px",
+  border: "1px solid rgba(255,255,255,0.12)",
+  background: "linear-gradient(180deg, rgba(14,22,34,0.98), rgba(10,16,26,0.98))",
+  boxShadow: "0 18px 55px rgba(0,0,0,0.75)",
+};
+
+const dropdownItem = {
+  width: "100%",
+  display: "flex",
+  justifyContent: "space-between",
+  alignItems: "center",
+  gap: "0.75rem",
+  padding: "0.55rem 0.65rem",
+  borderRadius: "12px",
+  border: "1px solid transparent",
+  background: "transparent",
+  color: "#eaf7ff",
+  textAlign: "left",
+};
+
+const dropdownEmpty = {
+  padding: "0.75rem",
+  color: "#9fbad0",
+  fontSize: "0.95rem",
+};
 
 export default function PlanetView() {
   const { id } = useParams(); // planet id
@@ -220,6 +443,7 @@ export default function PlanetView() {
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState("");
   const [planets, setPlanets] = useState([]);
+  const [characters, setCharacters] = useState([]);
 
   const makeEmptyForm = () => ({
     session_number: "",
@@ -236,10 +460,11 @@ export default function PlanetView() {
 
   const load = async () => {
     try {
-      const [planetsRes, sessionsRes, eventsRes] = await Promise.all([
+      const [planetsRes, sessionsRes, eventsRes, charactersRes] = await Promise.all([
         fetch(`${API_URL}api/campaign/planets`).then((r) => r.json()),
         fetch(`${API_URL}api/sessions`).then((r) => r.json()).catch(() => []),
         fetch(`${API_URL}api/timeline`).then((r) => r.json()).catch(() => []),
+        fetch(`${API_URL}api/characters`).then((r) => r.json()).catch(() => []),
       ]);
 
       const foundPlanet =
@@ -252,6 +477,7 @@ export default function PlanetView() {
 
       setEvents(planetEvents);
       setPlanets(planetsRes || []);
+      setCharacters(charactersRes || []);
 
       const planetSessionIds = [
         ...new Set(
@@ -263,7 +489,6 @@ export default function PlanetView() {
 
       setAllSessions(sessionsRes || []);
 
-      // NOTE: your original code compares planetSessionIds to s.session_number.
       const planetSessions = (sessionsRes || []).filter((s) =>
         planetSessionIds.includes(s.session_number)
       );
@@ -320,8 +545,12 @@ export default function PlanetView() {
       summary: s.summary ?? "",
       campaign_title: s.campaign_title ?? "Chalnath Expanse",
       logs: Array.isArray(s.logs) ? s.logs : [],
-      relationships_gained: Array.isArray(s.relationships_gained) ? s.relationships_gained : [],
-      relationships_lost: Array.isArray(s.relationships_lost) ? s.relationships_lost : [],
+      relationships_gained: Array.isArray(s.relationships_gained)
+        ? s.relationships_gained.map((x) => Number(x)).filter((n) => Number.isFinite(n))
+        : [],
+      relationships_lost: Array.isArray(s.relationships_lost)
+        ? s.relationships_lost.map((x) => Number(x)).filter((n) => Number.isFinite(n))
+        : [],
     });
   };
 
@@ -362,8 +591,12 @@ export default function PlanetView() {
               ? null
               : Number(form.planet_id),
           logs: Array.isArray(form.logs) ? form.logs : [],
-          relationships_gained: Array.isArray(form.relationships_gained) ? form.relationships_gained : [],
-          relationships_lost: Array.isArray(form.relationships_lost) ? form.relationships_lost : [],
+          relationships_gained: Array.isArray(form.relationships_gained)
+          ? form.relationships_gained.map(Number).filter(Number.isFinite)
+          : [],
+        relationships_lost: Array.isArray(form.relationships_lost)
+          ? form.relationships_lost.map(Number).filter(Number.isFinite)
+          : [],
         }),
       });
 
@@ -400,8 +633,12 @@ export default function PlanetView() {
               ? null
               : Number(form.planet_id),
           logs: Array.isArray(form.logs) ? form.logs : [],
-          relationships_gained: Array.isArray(form.relationships_gained) ? form.relationships_gained : [],
-          relationships_lost: Array.isArray(form.relationships_lost) ? form.relationships_lost : [],
+          relationships_gained: Array.isArray(form.relationships_gained)
+          ? form.relationships_gained.map(Number).filter(Number.isFinite)
+          : [],
+        relationships_lost: Array.isArray(form.relationships_lost)
+          ? form.relationships_lost.map(Number).filter(Number.isFinite)
+          : [],
         }),
       });
 
@@ -666,6 +903,7 @@ export default function PlanetView() {
             closeModals={closeModals}
             saving={saving}
             planets={planets}
+            characters={characters}
           />
         </ModalShell>
       )}
@@ -684,6 +922,7 @@ export default function PlanetView() {
             closeModals={closeModals}
             saving={saving}
             planets={planets}
+            characters={characters}
           />
         </ModalShell>
       )}

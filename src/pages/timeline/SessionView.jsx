@@ -1,5 +1,5 @@
 // pages/timeline/SessionView.jsx
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
 const API_URL = process.env.REACT_APP_API_URL || "http://localhost:6500/";
@@ -12,25 +12,58 @@ function toImperialDate(session) {
   return `${accuracy}.${fraction}.M${millennium}`;
 }
 
+function CharacterChips({ ids, byId }) {
+  const list = Array.isArray(ids) ? ids : [];
+  if (list.length === 0) return <span>—</span>;
+
+  return (
+    <span style={chipRow}>
+      {list.map((raw) => {
+        const id = Number(raw);
+        const c = byId.get(id);
+        const name = c?.name || `#${id}`;
+
+        return (
+          <span key={String(id)} style={chip} title={c ? `${c.name} (#${c.id})` : `Character ${id}`}>
+            <span style={{ opacity: 0.95 }}>{name}</span>
+            {c?.status && <span style={chipMeta}>{c.status}</span>}
+            {c?.characterImportance && <span style={chipMeta}>{c.characterImportance}</span>}
+          </span>
+        );
+      })}
+    </span>
+  );
+}
+
 export default function SessionView() {
   const { id } = useParams(); // session id
   const navigate = useNavigate();
 
   const [session, setSession] = useState(null);
+  const [characters, setCharacters] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const load = async () => {
       try {
-        const res = await fetch(`${API_URL}api/sessions/${id}`);
-        const data = await res.json();
+        const [sessionRes, charsRes] = await Promise.all([
+          fetch(`${API_URL}api/sessions/${id}`),
+          fetch(`${API_URL}api/characters`).catch(() => null),
+        ]);
 
-        if (!res.ok) {
-          throw new Error(data?.error || `Request failed: ${res.status}`);
+        const sessionData = await sessionRes.json();
+
+        if (!sessionRes.ok) {
+          throw new Error(sessionData?.error || `Request failed: ${sessionRes.status}`);
         }
 
-        console.log(data);
-        setSession(data);
+        let charsData = [];
+        if (charsRes) {
+          charsData = await charsRes.json().catch(() => []);
+        }
+
+        setSession(sessionData);
+        setCharacters(Array.isArray(charsData) ? charsData : []);
       } catch (e) {
         console.error("Error loading session:", e);
       } finally {
@@ -39,6 +72,12 @@ export default function SessionView() {
     };
     load();
   }, [id]);
+
+  const charactersById = useMemo(() => {
+    const m = new Map();
+    (characters || []).forEach((c) => m.set(Number(c.id), c));
+    return m;
+  }, [characters]);
 
   if (loading) return <div className="page-container"><p>Loading…</p></div>;
   if (!session) return <div className="page-container"><p>Session not found.</p></div>;
@@ -77,19 +116,26 @@ export default function SessionView() {
             {session.planet_name || "Unknown World"}
           </span>
         </div>
+
         {session.summary && <p className="event-desc">{session.summary}</p>}
+
         {session.gm_notes && (
           <details style={{ marginTop: 6 }}>
             <summary style={{ cursor: "pointer" }}><strong>GM Notes</strong></summary>
             <p style={{ marginTop: 8 }}>{session.gm_notes}</p>
           </details>
         )}
-        <p className="event-meta" style={{ marginTop: 8 }}>
-          <strong>Relationships Gained:</strong>{" "}
-          {(session.relationships_gained || []).join(", ") || "—"} &nbsp;|&nbsp;
-          <strong>Lost:</strong>{" "}
-          {(session.relationships_lost || []).join(", ") || "—"}
-        </p>
+
+        <div className="event-meta" style={{ marginTop: 10 }}>
+          <div style={{ marginBottom: 6 }}>
+            <strong>Relationships Gained:</strong>{" "}
+            <CharacterChips ids={session.relationships_gained} byId={charactersById} />
+          </div>
+          <div>
+            <strong>Relationships Lost:</strong>{" "}
+            <CharacterChips ids={session.relationships_lost} byId={charactersById} />
+          </div>
+        </div>
       </div>
 
       <div className="month-view">
@@ -142,3 +188,30 @@ export default function SessionView() {
     </div>
   );
 }
+
+// ---- tiny chip styles ----
+const chipRow = {
+  display: "inline-flex",
+  flexWrap: "wrap",
+  gap: "0.45rem",
+  verticalAlign: "middle",
+};
+
+const chip = {
+  display: "inline-flex",
+  alignItems: "center",
+  gap: "0.4rem",
+  padding: "0.25rem 0.55rem",
+  borderRadius: "999px",
+  border: "1px solid rgba(0,210,255,0.16)",
+  background: "rgba(0,210,255,0.06)",
+  color: "#d4f1ff",
+  fontWeight: 650,
+  lineHeight: 1.2,
+};
+
+const chipMeta = {
+  color: "#6f8ca3",
+  fontSize: "0.82rem",
+  fontWeight: 600,
+};
