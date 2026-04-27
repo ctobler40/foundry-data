@@ -408,6 +408,47 @@ body,
   font-style: italic;
 }
 
+.characterBuild-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 300px));
+  gap: 20px;
+  justify-content: center;
+  margin: 1.5rem auto;
+  width: 100%;
+}
+
+.characterBuild-card {
+  cursor: pointer;
+  border-radius: 16px;
+  background: #1e1e24;
+  border: 1px solid rgba(255,255,255,0.08);
+  transition: all 0.2s ease;
+  min-height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.characterBuild-card:hover {
+  transform: translateY(-3px);
+  border-color: rgba(255,255,255,0.2);
+}
+
+.characterBuild-card.active {
+  border: 2px solid #4f8cff;
+  background: rgba(79,140,255,0.1);
+}
+
+.characterBuild-card-inner {
+  text-align: center;
+  padding: 1rem;
+}
+
+.characterBuild-card h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
 .talents-loading {
   text-align: center;
   padding: 4rem;

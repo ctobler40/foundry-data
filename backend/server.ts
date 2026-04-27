@@ -2405,6 +2405,31 @@ app.get("/api/equipment/category/:category", async (req: Request, res: Response)
   }
 });
 
+app.get("/api/characterstats/name/:name", async (req: Request, res: Response) => {
+  try {
+    const { name } = req.params;
+
+    const { rows } = await db.query(
+      `
+      SELECT *
+      FROM characterstats
+      WHERE LOWER(character_name) = LOWER($1)
+      LIMIT 1;
+      `,
+      [decodeURIComponent(name)]
+    );
+
+    if (rows.length === 0) {
+      return res.status(404).json({ error: "Character stats not found" });
+    }
+
+    res.json(rows[0]);
+  } catch (err) {
+    console.error("Error fetching character stats:", err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
 // app.get("/api/equipment/subcategory/:subcategory", async (req: Request, res: Response) => {
 //   try {
 //     const { subcategory } = req.params;

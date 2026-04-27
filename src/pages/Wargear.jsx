@@ -1,9 +1,21 @@
 import { useEffect, useMemo, useState } from "react";
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "";
+const API_URL = process.env.REACT_APP_API_URL || "http://localhost:6500/";
+
+const categoryOptions = [
+  { value: "all", label: "All Wargear" },
+  { value: "weapons", label: "Weapons" },
+  { value: "armor", label: "Armour" },
+  { value: "augmetics", label: "Augmetics" },
+  { value: "tools", label: "Tools & Equipment" },
+  { value: "upgrades", label: "Weapon Upgrades" },
+  { value: "ammunition", label: "Reloads & Ammunition" },
+  { value: "consumables", label: "Combat Drugs & Consumables" },
+];
 
 export default function Wargear() {
   const [search, setSearch] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("all");
 
   const [armor, setArmor] = useState([]);
   const [weapons, setWeapons] = useState([]);
@@ -36,13 +48,13 @@ export default function Wargear() {
           ammoRes,
           consumablesRes,
         ] = await Promise.all([
-          fetch(`${API_BASE}/api/equipment/category/armor`),
-          fetch(`${API_BASE}/api/equipment/category/weapons`),
-          fetch(`${API_BASE}/api/equipment/category/augmetics`),
-          fetch(`${API_BASE}/api/equipment/category/tools`),
-          fetch(`${API_BASE}/api/equipment/category/upgrades`),
-          fetch(`${API_BASE}/api/equipment/category/ammunition`),
-          fetch(`${API_BASE}/api/equipment/category/consumables`),
+          fetch(`${API_URL}api/equipment/category/armor`),
+          fetch(`${API_URL}api/equipment/category/weapons`),
+          fetch(`${API_URL}api/equipment/category/augmetics`),
+          fetch(`${API_URL}api/equipment/category/tools`),
+          fetch(`${API_URL}api/equipment/category/upgrades`),
+          fetch(`${API_URL}api/equipment/category/ammunition`),
+          fetch(`${API_URL}api/equipment/category/consumables`),
         ]);
 
         const responses = [
@@ -86,20 +98,20 @@ export default function Wargear() {
     fetchWargear();
   }, []);
 
-  const equipment = useMemo(() => {
+  const equipmentByCategory = useMemo(() => {
     const upgradeWithoutAmmo = weaponUpgrades.filter(
       (item) => item.subcategory !== "Reload / Ammo"
     );
 
-    return [
-      ...weapons,
-      ...armor,
-      ...augmetics,
-      ...tools,
-      ...upgradeWithoutAmmo,
-      ...reloadsAndAmmo,
-      ...consumables,
-    ];
+    return {
+      weapons,
+      armor,
+      augmetics,
+      tools,
+      upgrades: upgradeWithoutAmmo,
+      ammunition: reloadsAndAmmo,
+      consumables,
+    };
   }, [
     weapons,
     armor,
@@ -109,6 +121,14 @@ export default function Wargear() {
     reloadsAndAmmo,
     consumables,
   ]);
+
+  const equipment = useMemo(() => {
+    if (selectedCategory === "all") {
+      return Object.values(equipmentByCategory).flat();
+    }
+
+    return equipmentByCategory[selectedCategory] || [];
+  }, [equipmentByCategory, selectedCategory]);
 
   const safeText = (value) => {
     if (Array.isArray(value)) return value.join(", ");
@@ -195,62 +215,51 @@ export default function Wargear() {
   return (
     <div className="talents-page">
       <div className="talents-header">
-        <h1>Wargear Index</h1>
-        <p>
-          A complete record of weapons, armour, augmetics, consumables, tools,
-          upgrades, and other equipment.
-        </p>
+        <h1>Wargear</h1>
 
-        <div className="search-bar">
-          <input
-            type="text"
-            placeholder="Search wargear by name..."
-            onChange={(e) => {
-              setSearch(e.target.value);
-              setSearchType("name");
-            }}
-            className="modern-input"
-          />
+        <div className="wargear-filters">
+          <div className="filter-field">
+            <label>Category</label>
+            <select
+              value={selectedCategory}
+              onChange={(e) => setSelectedCategory(e.target.value)}
+              className="modern-input"
+            >
+              {categoryOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
 
-          <input
-            type="text"
-            placeholder="Search by category..."
-            onChange={(e) => {
-              setSearch(e.target.value);
-              setSearchType("category");
-            }}
-            className="modern-input"
-          />
+          <div className="filter-field filter-field-wide">
+            <label>Search</label>
+            <input
+              type="text"
+              placeholder={`Search by ${searchType.replace("_", " ")}...`}
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="modern-input"
+            />
+          </div>
 
-          <input
-            type="text"
-            placeholder="Search by subcategory..."
-            onChange={(e) => {
-              setSearch(e.target.value);
-              setSearchType("subcategory");
-            }}
-            className="modern-input"
-          />
-
-          <input
-            type="text"
-            placeholder="Search by traits..."
-            onChange={(e) => {
-              setSearch(e.target.value);
-              setSearchType("traits");
-            }}
-            className="modern-input"
-          />
-
-          <input
-            type="text"
-            placeholder="Search by keywords..."
-            onChange={(e) => {
-              setSearch(e.target.value);
-              setSearchType("keywords");
-            }}
-            className="modern-input"
-          />
+          <div className="filter-field">
+            <label>Search Field</label>
+            <select
+              value={searchType}
+              onChange={(e) => setSearchType(e.target.value)}
+              className="modern-input"
+            >
+              <option value="name">Name</option>
+              <option value="category">Category</option>
+              <option value="subcategory">Subcategory</option>
+              <option value="traits">Traits</option>
+              <option value="keywords">Keywords</option>
+              <option value="description">Description</option>
+              <option value="effect">Effect</option>
+            </select>
+          </div>
         </div>
       </div>
 
@@ -272,32 +281,16 @@ export default function Wargear() {
                   <table className="talent-table styled-table wargear-table">
                     <thead>
                       <tr>
-                        <th onClick={() => handleSort("name")}>
-                          Name{sortIcon("name")}
-                        </th>
-                        <th onClick={() => handleSort("damage")}>
-                          Damage{sortIcon("damage")}
-                        </th>
-                        <th onClick={() => handleSort("ed")}>
-                          ED{sortIcon("ed")}
-                        </th>
-                        <th onClick={() => handleSort("ap")}>
-                          AP{sortIcon("ap")}
-                        </th>
+                        <th onClick={() => handleSort("name")}>Name{sortIcon("name")}</th>
+                        <th onClick={() => handleSort("damage")}>Damage{sortIcon("damage")}</th>
+                        <th onClick={() => handleSort("ed")}>ED{sortIcon("ed")}</th>
+                        <th onClick={() => handleSort("ap")}>AP{sortIcon("ap")}</th>
                         <th>Range</th>
-                        <th onClick={() => handleSort("salvo")}>
-                          Salvo{sortIcon("salvo")}
-                        </th>
-                        <th onClick={() => handleSort("armour_rating")}>
-                          Armour{sortIcon("armour_rating")}
-                        </th>
+                        <th onClick={() => handleSort("salvo")}>Salvo{sortIcon("salvo")}</th>
+                        <th onClick={() => handleSort("armour_rating")}>Armour{sortIcon("armour_rating")}</th>
                         <th>Traits</th>
-                        <th onClick={() => handleSort("value")}>
-                          Value{sortIcon("value")}
-                        </th>
-                        <th onClick={() => handleSort("rarity")}>
-                          Rarity{sortIcon("rarity")}
-                        </th>
+                        <th onClick={() => handleSort("value")}>Value{sortIcon("value")}</th>
+                        <th onClick={() => handleSort("rarity")}>Rarity{sortIcon("rarity")}</th>
                         <th>Keywords</th>
                         <th>Description</th>
                         <th>Effect</th>

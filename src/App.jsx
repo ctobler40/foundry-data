@@ -42,6 +42,7 @@ import CriticalHits from "./pages/combat/CriticalHits";
 import CriticalComps from "./pages/combat/CriticalComps";
 import EnvironmentHazards from "./pages/combat/EnvironmentHazards";
 import Wargear from "./pages/Wargear";
+import CharacterBuilds from "./pages/CharacterBuilds";
 
 // ----- FAFO Character Pages -----
 import Hrellik from "./pages/characters/Hrellik";
@@ -164,6 +165,7 @@ function App() {
             <Route path="/regroup-actions" element={<RegroupActions />} />
             <Route path="/ascensions" element={<Ascensions />} />
             <Route path="/wargear" element={<Wargear />} />
+            <Route path="/character-builds" element={<CharacterBuilds />} />
 
             {/* ----- Combat System Pages ----- */}
             <Route path="/combat" element={<Combat />} />
