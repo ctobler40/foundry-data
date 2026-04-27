@@ -337,6 +337,9 @@ body,
 }
 
 .search-bar {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(280px, 1fr));
+  gap: 5rem;
   margin: 1.5rem auto 2rem auto;
   width: 60%;
 }
@@ -416,11 +419,6 @@ body,
   color: #aaa;
   font-size: 1rem;
   margin-bottom: 1rem;
-}
-
-.search-bar {
-  margin: 1rem auto 2rem auto;
-  width: 60%;
 }
 
 .event-desc {

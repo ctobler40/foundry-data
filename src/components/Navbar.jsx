@@ -32,6 +32,10 @@ function Navbar() {
           Timeline
         </Link>
 
+        <Link to="/character-builds" className="navbar-subtitle">
+          Character Builds
+        </Link>
+
         <form onSubmit={handleSearch} className="navbar-search">
           <input
             type="text"

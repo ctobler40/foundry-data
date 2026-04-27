@@ -4,15 +4,17 @@ import Talent from "../components/Talent";
 export default function Talents({ talents }) {
   const [selectedTalent, setSelectedTalent] = useState(null);
   const [search, setSearch] = useState("");
+  const [searchType, setSearchType] = useState("name");
   const [sortKey, setSortKey] = useState("name");
   const [sortOrder, setSortOrder] = useState("asc");
 
   const filteredTalents = useMemo(() => {
     if (!Array.isArray(talents)) return [];
 
-    const filtered = talents.filter((talent) =>
-      talent.name.toLowerCase().includes(search.toLowerCase())
-    );
+    const filtered = talents.filter((talent) => {
+      const searchValue = talent[searchType]?.toLowerCase() || "";
+      return searchValue.includes(search.toLowerCase());
+    });
 
     const sorted = [...filtered].sort((a, b) => {
       let valA = a[sortKey] || "";
@@ -26,7 +28,7 @@ export default function Talents({ talents }) {
     });
 
     return sorted;
-  }, [talents, search, sortKey, sortOrder]);
+  }, [talents, search, searchType, sortKey, sortOrder]);
 
   const getPdfName = (sourcePage) => {
     // Map of short source labels to actual PDF filenames
@@ -89,8 +91,19 @@ export default function Talents({ talents }) {
           <input
             type="text"
             placeholder="Search talents by name..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => { setSearch(e.target.value); setSearchType("name"); }}
+            className="modern-input"
+          />
+          <input
+            type="text"
+            placeholder="Search talents by requirement..."
+            onChange={(e) => { setSearch(e.target.value); setSearchType("requirements"); }}
+            className="modern-input"
+          />
+          <input
+            type="text"
+            placeholder="Search talents by effect..."
+            onChange={(e) => { setSearch(e.target.value); setSearchType("effect"); }}
             className="modern-input"
           />
         </div>

@@ -2347,6 +2347,77 @@ app.get("/api/sessions", async (req, res) => {
   }
 });
 
+app.get("/api/equipment", async (req: Request, res: Response) => {
+  try {
+    const { rows } = await db.query("SELECT * FROM equipment ORDER BY category, subcategory, name ASC");
+    res.json(rows);
+  } catch (err) {
+    console.error("Error fetching equipment:", err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+app.get("/api/equipment/category/:category", async (req: Request, res: Response) => {
+  try {
+    const { category } = req.params;
+
+    const categoryMap: Record<string, string[]> = {
+      armor: ["Armour"],
+      weapons: ["Melee Weapon", "Ranged Weapon"],
+      augmetics: ["Augmetic"],
+      tools: ["Tools & Equipment"],
+      upgrades: ["Weapon Upgrade"],
+      ammunition: ["Weapon Upgrade"],
+      consumables: ["Consumable"],
+    };
+
+    const categories = categoryMap[category.toLowerCase()];
+
+    if (!categories) {
+      return res.status(400).json({ error: "Invalid equipment category" });
+    }
+
+    let query = `
+      SELECT *
+      FROM equipment
+      WHERE category = ANY($1)
+    `;
+
+    const params: any[] = [categories];
+
+    if (category.toLowerCase() === "ammunition") {
+      query += ` AND subcategory = $2`;
+      params.push("Reload / Ammo");
+    }
+
+    if (category.toLowerCase() === "upgrades") {
+      query += ` AND subcategory <> $2`;
+      params.push("Reload / Ammo");
+    }
+
+    query += ` ORDER BY category, subcategory, name ASC`;
+
+    const { rows } = await db.query(query, params);
+    res.json(rows);
+  } catch (err) {
+    console.error("Error fetching equipment by category:", err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// app.get("/api/equipment/subcategory/:subcategory", async (req: Request, res: Response) => {
+//   try {
+//     const { subcategory } = req.params;
+//     const { rows } = await db.query(
+//       "SELECT * FROM equipment WHERE subcategory = $1 ORDER BY category, name ASC",
+//       [subcategory]
+//     );
+//     res.json(rows);
+//   } catch (err) {
+//     console.error("Error fetching equipment by subcategory:", err);
+//     res.status(500).json({ error: "Internal Server Error" });
+//   }
+// });
 
 // ----------------------------------------
 // 🚀 Server Start

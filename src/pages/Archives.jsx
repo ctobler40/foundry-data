@@ -52,7 +52,9 @@ function Archives() {
           <div className="feature-card">
             <h3>Wargear</h3>
             <p>Weapon traits. Weapon upgrades, Ammo. Armor. Tools and Equipment.</p>
-            <span className="coming-soon">Coming Soon</span>
+            <Link to="/wargear" className="link-blue">
+              Explore →
+            </Link>
           </div>
 
           <div className="feature-card">
@@ -62,20 +64,8 @@ function Archives() {
           </div>
 
           <div className="feature-card">
-            <h3>Advanced Skills</h3>
-            <p>Operating big boi ships. Stabbing people enough times to make them feel good. Other shtuff, too.</p>
-            <span className="coming-soon">Coming Soon</span>
-          </div>
-
-          <div className="feature-card">
             <h3>Bestiary</h3>
             <p>The Warp-torn Gilead System is home to innumerate dangers; deranged warriors with advanced archeotech, monstrous xenos bioforms, and maddening otherworldly daemons.</p>
-            <span className="coming-soon">Coming Soon</span>
-          </div>
-
-          <div className="feature-card">
-            <h3>Factions</h3>
-            <p>Who the hell are we? And who the hell are we fighting?</p>
             <span className="coming-soon">Coming Soon</span>
           </div>
         </div>
