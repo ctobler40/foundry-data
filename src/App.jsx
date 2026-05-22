@@ -31,6 +31,11 @@ import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import Search from "./components/Search";
 
+// ----- Tabletop -----
+import Tabletop from "./pages/tabletop-notes/Tabletop";
+import KrootTabletop from "./pages/tabletop-notes/KrootTabletop";
+import TauTabletop from "./pages/tabletop-notes/TauTabletop";
+
 // ----- Combat System Pages -----
 import Combat from "./pages/Combat";
 import CombatActions from "./pages/combat/CombatActions";
@@ -184,6 +189,11 @@ function App() {
             {/* ----- Search / Redirect ----- */}
             <Route path="/search" element={<Search />} />
             <Route path="*" element={<Navigate to="/" replace />} />
+
+            {/* ----- Tabletop ----- */}
+            <Route path="/tabletop" element={<Tabletop />} />
+            <Route path="/tabletop/kroot" element={<KrootTabletop />} />
+            <Route path="/tabletop/tau" element={<TauTabletop />} />
           </Routes>
         </main>
         <Footer />

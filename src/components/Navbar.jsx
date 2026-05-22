@@ -1,9 +1,32 @@
 import { Link, useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 function Navbar() {
   const [query, setQuery] = useState("");
+  const [showTabletop, setShowTabletop] = useState(false);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === "=") {
+        setShowTabletop(true);
+      }
+    };
+
+    const handleKeyUp = (e) => {
+      if (e.key === "=") {
+        setShowTabletop(false);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("keyup", handleKeyUp);
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("keyup", handleKeyUp);
+    };
+  }, []);
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -35,6 +58,12 @@ function Navbar() {
         <Link to="/character-builds" className="navbar-subtitle">
           Character Builds
         </Link>
+
+        {showTabletop && (
+          <Link to="/tabletop" className="navbar-subtitle">
+            Tabletop
+          </Link>
+        )}
 
         <form onSubmit={handleSearch} className="navbar-search">
           <input

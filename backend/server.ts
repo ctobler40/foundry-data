@@ -2430,6 +2430,244 @@ app.get("/api/characterstats/name/:name", async (req: Request, res: Response) =>
   }
 });
 
+app.get("/api/tabletop/actions", async (req: Request, res: Response) => {
+  try {
+    const { unit, phase, yourTurn } = req.query;
+
+    if (!unit || !phase) {
+      return res.status(400).json({
+        error: "unit and phase required",
+      });
+    }
+
+    // ----------------------------------------
+    // UNIT
+    // ----------------------------------------
+    const unitResult = await db.query(
+      `
+      SELECT *
+      FROM tabletop_units
+      WHERE LOWER(name) = LOWER($1)
+      LIMIT 1
+      `,
+      [unit]
+    );
+
+    if (unitResult.rows.length === 0) {
+      return res.status(404).json({
+        error: "Unit not found",
+      });
+    }
+
+    const selectedUnit = unitResult.rows[0];
+
+    // ----------------------------------------
+    // WEAPONS
+    // ----------------------------------------
+    const weaponsResult = await db.query(
+      `
+      SELECT
+        w.*,
+        uw.quantity
+      FROM tabletop_unit_weapons uw
+      JOIN tabletop_weapons w
+        ON uw.weapon_id = w.id
+      WHERE uw.unit_id = $1
+      `,
+      [selectedUnit.id]
+    );
+
+    // ----------------------------------------
+    // ABILITIES
+    // ----------------------------------------
+    const abilitiesResult = await db.query(
+      `
+      SELECT a.*
+      FROM tabletop_unit_abilities ua
+      JOIN tabletop_abilities a
+        ON ua.ability_id = a.id
+      WHERE ua.unit_id = $1
+      `,
+      [selectedUnit.id]
+    );
+
+    // ----------------------------------------
+    // RULES
+    // ----------------------------------------
+    const rulesResult = await db.query(
+      `
+      SELECT r.*
+      FROM tabletop_unit_rules ur
+      JOIN tabletop_rules r
+        ON ur.rule_id = r.id
+      WHERE ur.unit_id = $1
+      `,
+      [selectedUnit.id]
+    );
+
+    const weapons = weaponsResult.rows;
+    const abilities = abilitiesResult.rows;
+    const rules = rulesResult.rows;
+
+    // ----------------------------------------
+    // POSSIBLE ACTIONS
+    // ----------------------------------------
+    const actions: string[] = [];
+
+    // ----------------------------------------
+    // COMMAND
+    // ----------------------------------------
+    if (phase === "Command") {
+      actions.push("Normal command phase actions available");
+
+      if (abilities.some(a => a.name === "Fieldcraft")) {
+        actions.push("Can maintain objective control");
+      }
+
+      if (abilities.some(a => a.name === "Root of Honour")) {
+        actions.push("Can remove Battle-shock from nearby Kroot");
+      }
+
+      if (abilities.some(a => a.name === "Loping Pounce")) {
+        actions.push("Can charge after advancing");
+      }
+    }
+
+    // ----------------------------------------
+    // MOVE
+    // ----------------------------------------
+    if (phase === "Move") {
+      actions.push("Can Normal Move");
+      actions.push("Can Advance");
+      actions.push("Can Fall Back");
+
+      if (rules.some(r => r.name.includes("Scout"))) {
+        actions.push("Can make Scout move");
+      }
+
+      if (rules.some(r => r.name === "Infiltrators")) {
+        actions.push("Can infiltrate during deployment");
+      }
+
+      if (abilities.some(a => a.name === "Trail Finding")) {
+        actions.push("Can reactively move after enemy movement");
+      }
+
+      if (abilities.some(a => a.name === "Fire and Fade")) {
+        actions.push("Can move after shooting");
+      }
+    }
+
+    // ----------------------------------------
+    // SHOOT
+    // ----------------------------------------
+    if (phase === "Shoot") {
+      if (yourTurn === "true") {
+        actions.push("Can shoot");
+
+        weapons
+          .filter(w => w.weapon_type === "ranged")
+          .forEach(w => {
+            actions.push(`Fire ${w.name}`);
+          });
+
+        if (
+          weapons.some(w =>
+            w.name.toLowerCase().includes("blast")
+          )
+        ) {
+          actions.push("Blast weapons gain attacks against large units");
+        }
+
+        if (
+          rules.some(r => r.name === "Rapid Fire")
+        ) {
+          actions.push("Rapid Fire active at half range");
+        }
+      }
+      else {
+        if (abilities.some(a => a.name === "Kroot Packmates")) {
+          actions.push("Can return fire during enemy shooting");
+        }
+      }
+    }
+
+    // ----------------------------------------
+    // CHARGE
+    // ----------------------------------------
+    if (phase === "Charge") {
+      if (yourTurn === "true") {
+        actions.push("Can declare charge");
+
+        if (
+          weapons.some(w =>
+            w.name.toLowerCase().includes("blade")
+          )
+        ) {
+          actions.push("Charge synergizes with melee weapons");
+        }
+      }
+    }
+
+    // ----------------------------------------
+    // COMBAT
+    // ----------------------------------------
+    if (phase === "Combat") {
+      actions.push("Can fight in melee");
+
+      weapons
+        .filter(w => w.weapon_type === "melee")
+        .forEach(w => {
+          actions.push(`Attack with ${w.name}`);
+        });
+
+      if (
+        rules.some(r => r.name === "Twin-linked")
+      ) {
+        actions.push("Can reroll wound rolls");
+      }
+
+      if (
+        rules.some(r => r.name === "Lethal Hits")
+      ) {
+        actions.push("Critical hits auto-wound");
+      }
+
+      if (
+        rules.some(r => r.name === "Sustained Hits")
+      ) {
+        actions.push("Critical hits generate additional hits");
+      }
+
+      if (
+        rules.some(r => r.name === "Extra Attacks")
+      ) {
+        actions.push("Additional melee attacks available");
+      }
+    }
+
+    // ----------------------------------------
+    // RESPONSE
+    // ----------------------------------------
+    res.json({
+      unit: selectedUnit,
+      weapons,
+      abilities,
+      rules,
+      phase,
+      yourTurn,
+      actions,
+    });
+
+  } catch (err) {
+    console.error("Error generating tabletop actions:", err);
+
+    res.status(500).json({
+      error: "Internal Server Error",
+    });
+  }
+});
+
 // app.get("/api/equipment/subcategory/:subcategory", async (req: Request, res: Response) => {
 //   try {
 //     const { subcategory } = req.params;
